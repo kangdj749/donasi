@@ -73,43 +73,18 @@ export default function HeroSection() {
       </AnimatePresence>
 
       {/* ================= OVERLAY ================= */}
-
-      {/* kiri fokus teks */}
-      <div
-        className="
-          absolute inset-0
-          bg-gradient-to-r
-          from-[rgb(var(--color-dark))]/75
-          via-[rgb(var(--color-dark))]/40
-          to-transparent
-        "
-      />
-
-      {/* depth bawah */}
-      <div
-        className="
-          absolute inset-0
-          bg-gradient-to-t
-          from-[rgb(var(--color-dark))]/50
-          via-transparent
-          to-transparent
-        "
-      />
-
-      {/* brand glow */}
-      <div
-        className="
-          absolute inset-0
-          pointer-events-none
-          bg-[radial-gradient(circle_at_25%_45%,rgba(34,197,94,0.16),transparent_60%)]
-        "
-      />
+      <div className="absolute inset-0 bg-gradient-to-r from-[rgb(var(--color-dark))]/75 via-[rgb(var(--color-dark))]/35 to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-t from-[rgb(var(--color-dark))]/50 via-transparent to-transparent" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_40%,rgba(34,197,94,0.18),transparent_60%)]" />
 
       {/* ================= CONTENT ================= */}
       <div className="relative z-10 flex items-center min-h-[88vh] md:h-full">
-        <div className="container-wide">
 
-          <div className="max-w-[640px] md:max-w-[760px]">
+        {/* 🔥 KEY: container-wide + padding manual */}
+        <div className="container-wide w-full">
+
+          {/* 🔥 LEFT ALIGN SYSTEM */}
+          <div className="max-w-[720px]">
 
             {/* LABEL */}
             <motion.p
@@ -135,11 +110,10 @@ export default function HeroSection() {
               animate={{ opacity: 1, y: 0 }}
               className="
                 text-[30px] sm:text-[36px] md:text-[56px] lg:text-[72px]
-                leading-[1.1]
+                leading-[1.08]
                 tracking-[-0.02em]
                 font-bold
                 mb-5 md:mb-6
-                break-words
               "
               style={{
                 textShadow: "0 8px 32px rgba(0,0,0,0.45)",
@@ -164,7 +138,7 @@ export default function HeroSection() {
                 leading-[1.8]
                 text-[rgb(var(--color-white))]/85
                 mb-7 md:mb-8
-                max-w-[520px]
+                max-w-[560px]
               "
             >
               {slide.subtitle}
@@ -182,7 +156,7 @@ export default function HeroSection() {
                   btn
                   bg-[rgb(var(--color-accent))]
                   text-[rgb(var(--color-white))]
-                  px-5 py-3
+                  px-6 py-3
                   text-[14px] md:text-[15px]
                   font-semibold
                   shadow-[var(--shadow-medium)]
