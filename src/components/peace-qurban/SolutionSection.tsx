@@ -8,8 +8,8 @@ export default function SolutionSection() {
   return (
     <section className="relative bg-[rgb(var(--color-bg))] overflow-hidden">
 
-      {/* ================= SOFT LIGHT BACKGROUND ================= */}
-      <div className="absolute inset-0 pointer-events-none">
+      {/* ================= BACKGROUND GLOW ================= */}
+      <div className="pointer-events-none absolute inset-0">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(34,197,94,0.08),transparent_60%)]" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_80%,rgba(249,115,22,0.06),transparent_60%)]" />
       </div>
@@ -18,16 +18,17 @@ export default function SolutionSection() {
 
         <div className="container-wide">
 
-          <div className="grid grid-cols-12 gap-10 items-center">
+          <div className="grid gap-10 md:grid-cols-2 md:gap-14 items-center">
 
             {/* ================= TEXT ================= */}
-            <div className="col-span-12 md:col-span-6">
-
+            <motion.div
+              initial={{ opacity: 0, y: 24 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="order-2 md:order-1"
+            >
               {/* LABEL */}
-              <motion.p
-                initial={{ opacity: 0, y: 10 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
+              <p
                 className="
                   text-[rgb(var(--color-primary))]
                   text-[11px]
@@ -38,19 +39,17 @@ export default function SolutionSection() {
                 "
               >
                 SOLUSI
-              </motion.p>
+              </p>
 
               {/* HEADLINE */}
-              <motion.h2
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
+              <h2
                 className="
-                  text-[30px] sm:text-[34px] md:text-[40px]
-                  font-semibold
+                  text-[26px] sm:text-[30px] md:text-[38px]
                   leading-[1.3]
+                  font-semibold
+                  tracking-[-0.01em]
                   text-[rgb(var(--color-text))]
-                  mb-6
+                  mb-5
                 "
               >
                 Di sinilah{" "}
@@ -58,59 +57,59 @@ export default function SolutionSection() {
                   Peace Qurban
                 </span>{" "}
                 hadir.
-              </motion.h2>
+              </h2>
 
               {/* DESCRIPTION */}
-              <motion.p
-                initial={{ opacity: 0, y: 25 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
+              <p
                 className="
-                  text-[16px] md:text-[18px]
-                  leading-[1.9]
+                  text-[15.5px] sm:text-[16.5px] md:text-[17.5px]
+                  leading-[1.85]
                   text-[rgb(var(--color-muted))]
-                  mb-8
-                  max-w-[520px]
+                  mb-7
+                  max-w-[560px]
                 "
               >
                 Sebuah ikhtiar untuk menjadikan qurban lebih bermakna,
                 lebih luas jangkauannya, dan lebih panjang dampaknya.
-              </motion.p>
+              </p>
 
-              {/* TRANSITION LINE */}
-              <motion.p
-                initial={{ opacity: 0 }}
-                whileInView={{ opacity: 1 }}
-                viewport={{ once: true }}
+              {/* EMPHASIS LINE */}
+              <div
                 className="
-                  text-[15px]
-                  text-[rgb(var(--color-subtle))]
-                  leading-[1.8]
-                  max-w-[460px]
+                  border-l-2
+                  border-[rgb(var(--color-accent))]
+                  pl-4
                 "
               >
-                Bukan sekadar qurban biasa —
-                <br />
-                tapi qurban yang dirancang untuk memberi dampak lebih luas.
-              </motion.p>
-
-            </div>
+                <p
+                  className="
+                    text-[15.5px]
+                    leading-[1.8]
+                    text-[rgb(var(--color-text))]
+                  "
+                >
+                  Bukan sekadar qurban biasa —
+                  <br />
+                  tapi qurban yang dirancang untuk memberi dampak lebih luas.
+                </p>
+              </div>
+            </motion.div>
 
             {/* ================= IMAGE ================= */}
             <motion.div
-              initial={{ opacity: 0, scale: 0.97 }}
-              whileInView={{ opacity: 1, scale: 1 }}
+              initial={{ opacity: 0, y: 24 }}
+              whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className="col-span-12 md:col-span-6"
+              className="order-1 md:order-2"
             >
               <div
                 className="
                   relative
                   w-full
-                  h-[260px] sm:h-[320px] md:h-[380px]
+                  aspect-[4/3] md:aspect-[5/4]
                   rounded-[var(--radius-lg)]
                   overflow-hidden
-                  shadow-[var(--shadow-medium)]
+                  shadow-[var(--shadow-elevated)]
                 "
               >
                 <Image
@@ -122,9 +121,10 @@ export default function SolutionSection() {
                   fill
                   sizes="(max-width:768px) 100vw, 50vw"
                   className="object-cover"
+                  priority={false}
                 />
 
-                {/* SUBTLE OVERLAY */}
+                {/* overlay tipis biar nyatu */}
                 <div className="absolute inset-0 bg-[rgb(var(--color-dark))]/10" />
               </div>
             </motion.div>

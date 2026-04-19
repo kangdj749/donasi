@@ -9,26 +9,40 @@ export default function EmpathySection() {
     <section
       className="
         relative
-        bg-[rgb(var(--color-bg))]
         section
+        bg-[rgb(var(--color-bg))]
       "
     >
       <div className="container-wide">
 
-        <div className="grid grid-cols-12 gap-10 items-center">
+        {/* ================= GRID ================= */}
+        <div
+          className="
+            grid
+            grid-cols-1
+            md:grid-cols-2
+            gap-10 md:gap-16
+            items-center
+          "
+        >
 
           {/* ================= IMAGE ================= */}
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 40 }}
             whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
             viewport={{ once: true }}
-            className="col-span-12 md:col-span-6"
           >
             <div
               className="
                 relative
+                w-full
+                aspect-[4/3]
+                md:aspect-[5/4]
+
                 overflow-hidden
-                rounded-[16px]
+                rounded-[18px]
+
                 shadow-[var(--shadow-elevated)]
               "
             >
@@ -38,59 +52,61 @@ export default function EmpathySection() {
                   "natural"
                 )}
                 alt="Anak-anak di daerah terpencil menunggu qurban"
-                width={720}
-                height={520}
-                className="object-cover w-full h-full"
-                priority={false}
+                fill
+                sizes="(max-width: 768px) 100vw, 50vw"
+                className="object-cover"
               />
 
-              {/* subtle overlay biar nyatu */}
+              {/* overlay subtle */}
               <div className="absolute inset-0 bg-[rgb(var(--color-dark))]/10" />
             </div>
           </motion.div>
 
           {/* ================= TEXT ================= */}
-          <div className="col-span-12 md:col-span-6">
+          <div className="container-narrow md:container-none">
 
             <motion.div
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: 40 }}
               whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.1 }}
               viewport={{ once: true }}
             >
 
               {/* LABEL */}
               <p
                 className="
-                  text-[12px]
-                  tracking-[0.3em]
+                  text-[11px]
+                  tracking-[0.35em]
                   uppercase
                   font-semibold
                   text-[rgb(var(--color-primary))]
-                  mb-5
+                  mb-6
                 "
               >
                 Sebuah Realita
               </p>
 
-              {/* HEADLINE (EMOTIONAL BREAK) */}
+              {/* HEADLINE */}
               <h2
                 className="
-                  text-[26px] md:text-[34px]
-                  leading-[1.35]
+                  text-[28px] sm:text-[32px] md:text-[38px]
+                  leading-[1.25]
                   font-semibold
-                  tracking-[-0.01em]
+                  tracking-[-0.02em]
                   text-[rgb(var(--color-text))]
                   mb-6
                 "
               >
-                Di daerah terpencil, di kampung yang jauh dari kota,
+                Di daerah terpencil,
+                <br />
+                di kampung yang jauh dari kota,
                 <br />
                 <span className="text-[rgb(var(--color-accent))]">
                   qurban bukan tradisi tahunan.
                 </span>
               </h2>
 
-              {/* BODY STORY */}
+              {/* BODY */}
               <div className="space-y-5">
 
                 <p className="text-[rgb(var(--color-muted))] text-[15.5px] leading-[1.8]">
@@ -99,7 +115,7 @@ export default function EmpathySection() {
 
                 <p
                   className="
-                    text-[17px]
+                    text-[17.5px]
                     leading-[1.8]
                     text-[rgb(var(--color-text))]
                     font-medium
@@ -110,24 +126,23 @@ export default function EmpathySection() {
 
                 <p className="text-[rgb(var(--color-muted))] text-[15.5px] leading-[1.8]">
                   Ada anak-anak yang hanya bisa melihat,
-                  <br />
                   tanpa pernah benar-benar merasakan.
                 </p>
 
               </div>
 
-              {/* EMOTIONAL LINE */}
+              {/* EMOTIONAL BLOCK */}
               <div
                 className="
                   mt-8
-                  border-l-2
+                  pl-5
+                  border-l-[3px]
                   border-[rgb(var(--color-accent))]
-                  pl-4
                 "
               >
                 <p
                   className="
-                    text-[16px]
+                    text-[16.5px]
                     leading-[1.8]
                     text-[rgb(var(--color-text))]
                     italic
