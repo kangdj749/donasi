@@ -38,14 +38,12 @@ export default function HeroSection() {
     <section
       className="
         relative
-        h-[100vh]
-        min-h-[720px]
-        -mt-[72px]
-        pt-[72px]
+        min-h-[88vh] md:h-[100vh]
+        -mt-[72px] pt-[72px]
         overflow-hidden
+        bg-[rgb(var(--color-dark))]
       "
     >
-
       {/* ================= BACKGROUND ================= */}
       <AnimatePresence mode="wait">
         <motion.div
@@ -57,7 +55,7 @@ export default function HeroSection() {
           className="absolute inset-0"
         >
           <motion.div
-            initial={{ scale: 1.08 }}
+            initial={{ scale: 1.06 }}
             animate={{ scale: 1 }}
             transition={{ duration: 8, ease: "easeOut" }}
             className="absolute inset-0"
@@ -74,154 +72,148 @@ export default function HeroSection() {
         </motion.div>
       </AnimatePresence>
 
-      {/* ================= OVERLAY (FIXED) ================= */}
+      {/* ================= OVERLAY ================= */}
 
-      {/* 🔥 Gradient kiri → fokus teks (tidak terlalu gelap) */}
+      {/* kiri fokus teks */}
       <div
         className="
           absolute inset-0
           bg-gradient-to-r
-          from-[rgb(var(--color-dark))]/70
-          via-[rgb(var(--color-dark))]/35
+          from-[rgb(var(--color-dark))]/75
+          via-[rgb(var(--color-dark))]/40
           to-transparent
         "
       />
 
-      {/* 🔥 Bottom depth (soft, bukan gelap total) */}
+      {/* depth bawah */}
       <div
         className="
           absolute inset-0
           bg-gradient-to-t
-          from-[rgb(var(--color-dark))]/40
+          from-[rgb(var(--color-dark))]/50
           via-transparent
           to-transparent
         "
       />
 
-      {/* 🔥 Brand light (halus banget, biar hidup) */}
+      {/* brand glow */}
       <div
         className="
           absolute inset-0
           pointer-events-none
-          bg-[radial-gradient(circle_at_25%_45%,rgba(34,197,94,0.18),transparent_60%)]
+          bg-[radial-gradient(circle_at_25%_45%,rgba(34,197,94,0.16),transparent_60%)]
         "
       />
 
       {/* ================= CONTENT ================= */}
-      <div className="relative z-10 h-full flex items-center">
+      <div className="relative z-10 flex items-center min-h-[88vh] md:h-full">
         <div className="container-wide">
 
-          <div className="grid grid-cols-12 gap-8">
+          <div className="max-w-[640px] md:max-w-[760px]">
 
-            {/* TEXT */}
-            <div className="col-span-12 md:col-span-7 max-w-[760px]">
+            {/* LABEL */}
+            <motion.p
+              key={`label-${index}`}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="
+                text-[11px]
+                tracking-[0.35em]
+                uppercase
+                font-semibold
+                text-[rgb(var(--color-white))]/70
+                mb-4 md:mb-6
+              "
+            >
+              PROGRAM QURBAN 1447 H
+            </motion.p>
 
-              {/* LABEL */}
-              <motion.p
-                key={`label-${index}`}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
+            {/* HEADLINE */}
+            <motion.h1
+              key={slide.title}
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="
+                text-[30px] sm:text-[36px] md:text-[56px] lg:text-[72px]
+                leading-[1.1]
+                tracking-[-0.02em]
+                font-bold
+                mb-5 md:mb-6
+                break-words
+              "
+              style={{
+                textShadow: "0 8px 32px rgba(0,0,0,0.45)",
+              }}
+            >
+              <span className="block text-[rgb(var(--color-white))]">
+                Qurban Kita,
+              </span>
+
+              <span className="block text-[rgb(var(--color-accent))]">
+                Harapan Mereka
+              </span>
+            </motion.h1>
+
+            {/* SUBTEXT */}
+            <motion.p
+              key={slide.subtitle}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="
+                text-[15.5px] sm:text-[16.5px] md:text-[18px]
+                leading-[1.8]
+                text-[rgb(var(--color-white))]/85
+                mb-7 md:mb-8
+                max-w-[520px]
+              "
+            >
+              {slide.subtitle}
+            </motion.p>
+
+            {/* CTA */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex flex-col sm:flex-row gap-3 sm:gap-4"
+            >
+              <Link
+                href="/campaign/peace-qurban"
                 className="
-                  text-[12px]
-                  tracking-[0.35em]
-                  uppercase
+                  btn
+                  bg-[rgb(var(--color-accent))]
+                  text-[rgb(var(--color-white))]
+                  px-5 py-3
+                  text-[14px] md:text-[15px]
                   font-semibold
-                  text-[rgb(var(--color-white))]/70
-                  mb-6
+                  shadow-[var(--shadow-medium)]
+                  hover:opacity-90
                 "
               >
-                PROGRAM QURBAN 1447 H
-              </motion.p>
+                Tunaikan Qurban Sekarang
+              </Link>
 
-              {/* HEADLINE */}
-              <motion.h1
-                key={slide.title}
-                initial={{ opacity: 0, y: 40 }}
-                animate={{ opacity: 1, y: 0 }}
+              <Link
+                href="#"
                 className="
-                  text-4xl sm:text-5xl md:text-7xl lg:text-[76px]
-                  leading-[1.05]
-                  tracking-[-0.02em]
-                  mb-6
-                  font-bold
-                "
-                style={{
-                  textShadow: "0 10px 40px rgba(0,0,0,0.45)",
-                }}
-              >
-                <span className="block text-[rgb(var(--color-white))]">
-                  Qurban Kita,
-                </span>
-
-                <span className="block text-[rgb(var(--color-accent))]">
-                  Harapan Mereka
-                </span>
-              </motion.h1>
-
-              {/* SUBTEXT */}
-              <motion.p
-                key={slide.subtitle}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="
-                  text-[18px] md:text-[20px]
-                  leading-relaxed
-                  text-[rgb(var(--color-white))]/85
-                  mb-8
-                  max-w-[560px]
+                  text-[rgb(var(--color-white))]/80
+                  text-[12px]
+                  uppercase
+                  tracking-[0.15em]
+                  border-b border-[rgb(var(--color-white))]/30
+                  w-fit
+                  hover:text-[rgb(var(--color-accent))]
+                  hover:border-[rgb(var(--color-accent))]
+                  transition
                 "
               >
-                {slide.subtitle}
-              </motion.p>
+                Konsultasi via WhatsApp
+              </Link>
+            </motion.div>
 
-              {/* CTA */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="flex flex-wrap gap-4"
-              >
-                <Link
-                  href="/campaign/peace-qurban"
-                  className="
-                    btn
-                    bg-[rgb(var(--color-accent))]
-                    text-[rgb(var(--color-white))]
-                    px-6 py-3
-                    text-[15px]
-                    font-semibold
-                    shadow-lg
-                    hover:opacity-90
-                  "
-                >
-                  Tunaikan Qurban Sekarang
-                </Link>
-
-                <Link
-                  href="#"
-                  className="
-                    text-[rgb(var(--color-white))]/80
-                    text-[13px]
-                    uppercase
-                    tracking-[0.15em]
-                    border-b border-[rgb(var(--color-white))]/30
-                    hover:text-[rgb(var(--color-accent))]
-                    hover:border-[rgb(var(--color-accent))]
-                    transition
-                  "
-                >
-                  Konsultasi via WhatsApp
-                </Link>
-              </motion.div>
-
-              {/* TRUST */}
-              <p className="mt-6 text-[13px] text-[rgb(var(--color-white))]/70">
-                ✔ Distribusi ke daerah 3T • ✔ Amanah • ✔ Sesuai syariat
-              </p>
-
-            </div>
-
-            {/* EMPTY SPACE */}
-            <div className="hidden md:block md:col-span-5" />
+            {/* TRUST */}
+            <p className="mt-5 text-[12.5px] text-[rgb(var(--color-white))]/70">
+              ✔ Distribusi ke daerah 3T • ✔ Amanah • ✔ Sesuai syariat
+            </p>
 
           </div>
         </div>
