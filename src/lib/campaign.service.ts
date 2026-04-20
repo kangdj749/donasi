@@ -9,7 +9,7 @@ type CacheEntry<T> = {
   expiry: number;
 };
 
-const CACHE_TTL = 5 * 60 * 1000; // 5 menit
+const CACHE_TTL = 5 * 60 * 1000;
 
 const cache = new Map<string, CacheEntry<unknown>>();
 const inFlight = new Map<string, Promise<unknown>>();
@@ -34,12 +34,18 @@ function setCache<T>(key: string, data: T) {
 }
 
 /* =========================
-   TYPES (STRICT)
+   TYPES
 ========================= */
 
 type RawCampaign = Record<string, unknown>;
 type RawStory = Record<string, unknown>;
 type RawOrganization = Record<string, unknown>;
+
+export type CampaignType =
+  | "donation"
+  | "qurban"
+  | "zakat"
+  | "event";
 
 export type Organization = {
   id: string;
@@ -69,17 +75,25 @@ export type Campaign = {
   title: string;
   short_tagline: string;
   category: string;
+  type: CampaignType;
+
   hero_image_public_id: string;
   hero_video_url?: string;
+
   goal_amount: number;
   collected_amount: number;
+
+  donor_count: number;
+  prayer_count: number;
+
   status: string;
+
   organization?: Organization;
   stories: CampaignStorySection[];
 };
 
 /* =========================
-   HELPERS (SAFE)
+   HELPERS
 ========================= */
 
 function s(val: unknown): string {
@@ -96,12 +110,37 @@ function toBoolean(val: unknown): boolean {
   return v === "true" || v === "active" || v === "1";
 }
 
-function toDate(val: unknown): number {
-  return new Date(s(val)).getTime() || 0;
+/* =========================
+   TYPE RESOLVER (🔥 IMPORTANT)
+========================= */
+
+function resolveType(
+  type?: unknown,
+  category?: unknown
+): CampaignType {
+  const t = s(type).toLowerCase();
+
+  // ✅ PRIORITAS TYPE (STRICT)
+  if (t === "qurban") return "qurban";
+  if (t === "zakat") return "zakat";
+  if (t === "event") return "event";
+  if (t === "donation") return "donation";
+
+  // 🔥 DEBUG
+  console.log("⚠️ FALLBACK TYPE:", t, category);
+
+  // fallback
+  const c = s(category).toLowerCase();
+
+  if (c.includes("qurban")) return "qurban";
+  if (c.includes("zakat")) return "zakat";
+  if (c.includes("event")) return "event";
+
+  return "donation";
 }
 
 /* =========================
-   BATCH FETCH (🔥 CORE ENGINE)
+   FETCH ENGINE
 ========================= */
 
 type AllSheets = {
@@ -160,7 +199,7 @@ async function getAllSheets(): Promise<AllSheets> {
 }
 
 /* =========================
-   NORMALIZER (🔥 CORE)
+   NORMALIZER
 ========================= */
 
 function normalizeOrganization(
@@ -178,9 +217,7 @@ function normalizeOrganization(
   };
 }
 
-function normalizeCampaign(
-  raw: RawCampaign
-): Campaign {
+function normalizeCampaign(raw: RawCampaign): Campaign {
   return {
     id: s(raw.id),
     organization_id: s(raw.organization_id),
@@ -188,11 +225,21 @@ function normalizeCampaign(
     title: s(raw.title),
     short_tagline: s(raw.short_tagline),
     category: s(raw.category),
+
+    /* 🔥 CORE FIX */
+    type: resolveType(raw.type, raw.category),
+
     hero_image_public_id: s(raw.hero_image_public_id),
     hero_video_url: s(raw.hero_video_url) || undefined,
+
     goal_amount: toNumber(raw.goal_amount),
     collected_amount: toNumber(raw.collected_amount),
+
+    donor_count: toNumber(raw.donor_count),
+    prayer_count: toNumber(raw.prayer_count),
+
     status: s(raw.status),
+
     stories: [],
   };
 }
@@ -216,7 +263,7 @@ function normalizeStories(
 }
 
 /* =========================
-   CORE BUILDER (🔥 REUSABLE)
+   BUILDER
 ========================= */
 
 function buildCampaign(
@@ -226,7 +273,7 @@ function buildCampaign(
 ): Campaign {
   const campaign = normalizeCampaign(raw);
 
-  /* ===== ORGANIZATION ===== */
+  /* ORGANIZATION */
   if (campaign.organization_id) {
     const org = orgs.find(
       (o) => s(o.id) === campaign.organization_id
@@ -237,7 +284,7 @@ function buildCampaign(
     }
   }
 
-  /* ===== STORIES ===== */
+  /* STORIES */
   campaign.stories = normalizeStories(
     campaign.id,
     stories
@@ -268,10 +315,6 @@ export async function getCampaignBySlug(
 
   return buildCampaign(raw, stories, orgs);
 }
-
-/* =========================
-   🔥 NEW: GET BY ID
-========================= */
 
 export async function getCampaignById(
   id: string

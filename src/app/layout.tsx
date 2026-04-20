@@ -10,12 +10,12 @@ export const metadata = {
   },
   description:
     "Platform donasi terpercaya untuk membantu sesama. Salurkan kebaikanmu sekarang.",
-  metadataBase: new URL("https://yourdomain.com"),
+  metadataBase: new URL("https://donasi.grahadhuafa.org"),
   openGraph: {
     title: "GDI Donasi",
     description:
       "Platform donasi terpercaya untuk membantu sesama.",
-    url: "https://yourdomain.com",
+    url: "https://donasi.grahadhuafa.org",
     siteName: "GDI Donasi",
     locale: "id_ID",
     type: "website",

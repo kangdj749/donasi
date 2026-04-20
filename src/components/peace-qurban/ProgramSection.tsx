@@ -2,6 +2,7 @@
 
 import Image from "next/image"
 import Link from "next/link"
+import { useAffiliateContext } from "@/components/system/AffiliateContext"
 import { cloudinaryImage } from "@/lib/cloudinaryImage"
 
 type ProgramItem = {
@@ -9,7 +10,8 @@ type ProgramItem = {
   subtitle: string
   icon: string
   image: string
-  href: string
+  product?: string
+  highlight?: string
 }
 
 const programs: ProgramItem[] = [
@@ -19,143 +21,159 @@ const programs: ProgramItem[] = [
     icon: "🐐",
     image:
       "https://res.cloudinary.com/de7fqcvpf/image/upload/v1776554573/Jenis-hewan-kurban-domba_lz1cwn.jpg",
-    href: "/campaign/peace-qurban",
+    product: "Qurban Domba",
+    highlight: "Paling diminati",
   },
   {
     title: "Qurban Sapi",
-    subtitle: "Dampak besar untuk lebih banyak penerima",
+    subtitle: "Dampak besar untuk banyak penerima",
     icon: "🐄",
     image:
       "https://res.cloudinary.com/de7fqcvpf/image/upload/v1776554325/Pusat20250511-015908-jual_20sapi2_jva4nr.webp",
-    href: "/campaign/peace-qurban",
+    product: "Qurban Sapi",
   },
   {
     title: "1/7 Sapi",
-    subtitle: "Solusi qurban kolektif yang terjangkau",
+    subtitle: "Solusi patungan lebih ringan",
     icon: "👥",
     image:
       "https://res.cloudinary.com/de7fqcvpf/image/upload/v1776554084/img-20250530-174010-68398ba634777c1c1278d9d3_jkunpq.jpg",
-    href: "/campaign/peace-qurban",
+    product: "Qurban 1/7 Sapi",
   },
   {
     title: "Sedekah Qurban",
-    subtitle: "Tetap bisa berbagi meski belum mampu penuh",
+    subtitle: "Berbagi tanpa harus berqurban penuh",
     icon: "❤️",
     image:
       "https://res.cloudinary.com/de7fqcvpf/image/upload/v1776553887/Mengutamakan-berqurban-atau-sedekah_bhwqwt.jpg",
-    href: "/campaign/peace-qurban",
   },
 ]
 
 export default function ProgramSection() {
+  const { ref, src } = useAffiliateContext()
+
+  function generateWA(product: string) {
+    const phone = "628123456789"
+
+    const message = `
+Assalamu’alaikum kak 🙏
+
+Saya tertarik ikut program:
+*Peace Qurban*
+
+Pilihan:
+• ${product}
+
+Mohon info detail & proses selanjutnya ya kak 🙏
+${ref ? `\nRef: ${ref}` : ""}
+${src ? `\nSource: ${src}` : ""}
+`
+
+    return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`
+  }
+
   return (
-    <section
-      className="
-        relative
-        section
-        bg-[rgb(var(--color-bg))]
-        overflow-hidden
-      "
-    >
-      {/* ================= BACKGROUND ACCENT ================= */}
+    <section className="relative section bg-[rgb(var(--color-bg))] overflow-hidden">
+
+      {/* BG ACCENT */}
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute top-[-120px] right-[-120px] w-[420px] h-[420px] bg-[rgb(var(--color-primary))]/10 blur-3xl rounded-full" />
       </div>
 
       <div className="container-wide relative z-10">
 
-        {/* ================= HEADER ================= */}
+        {/* HEADER */}
         <div className="max-w-[720px] mb-12">
           <p className="caption tracking-[0.25em] uppercase mb-4">
             PILIHAN PROGRAM
           </p>
 
-          <h2
-            className="
-              text-[26px] md:text-[34px]
-              font-semibold
-              leading-[1.3]
-              tracking-[-0.02em]
-              text-[rgb(var(--color-text))]
-              mb-6
-            "
-          >
+          <h2 className="h2 mb-6">
             Pilih Qurban Terbaik Sesuai Kemampuan Anda
           </h2>
 
           <p className="body-lg text-[rgb(var(--color-muted))]">
-            Setiap pilihan membawa kebaikan. Pilih yang paling sesuai,
-            dan biarkan kami menyalurkannya kepada mereka yang membutuhkan.
+            Setiap pilihan membawa dampak nyata bagi yang membutuhkan.
           </p>
         </div>
 
-        {/* ================= GRID ================= */}
+        {/* GRID */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
 
           {programs.map((item, i) => (
-            <Link
+            <div
               key={i}
-              href={item.href}
               className="
-                group
-                relative
-                block
-                overflow-hidden
+                group relative overflow-hidden
                 rounded-[var(--radius-lg)]
                 border border-[rgb(var(--color-border))]
                 bg-[rgb(var(--color-surface))]
                 shadow-[var(--shadow-soft)]
-                transition
-                hover:shadow-[var(--shadow-medium)]
+                transition hover:shadow-[var(--shadow-medium)]
                 hover:-translate-y-1
               "
             >
+
               {/* IMAGE */}
-              <div className="relative w-full h-[180px] overflow-hidden">
+              <div className="relative h-[180px] overflow-hidden">
                 <Image
                   src={cloudinaryImage(item.image, "card")}
                   alt={item.title}
                   fill
-                  sizes="(max-width: 768px) 100vw, 25vw"
-                  className="
-                    object-cover
-                    transition duration-500
-                    group-hover:scale-105
-                  "
+                  className="object-cover transition group-hover:scale-105"
                 />
 
-                {/* OVERLAY */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                {/* BADGE */}
+                {item.highlight && (
+                  <div className="absolute top-3 left-3 px-2 py-1 rounded-full bg-[rgb(var(--color-primary))] text-white text-[10px]">
+                    {item.highlight}
+                  </div>
+                )}
               </div>
 
               {/* CONTENT */}
-              <div className="p-5">
+              <div className="p-5 space-y-3">
 
-                <div className="text-xl mb-2">{item.icon}</div>
+                <div className="text-xl">{item.icon}</div>
 
-                <h3 className="h3 text-[rgb(var(--color-text))] mb-2">
-                  {item.title}
-                </h3>
+                <h3 className="h3">{item.title}</h3>
 
-                <p className="caption">
+                <p className="caption text-[rgb(var(--color-muted))]">
                   {item.subtitle}
                 </p>
 
+                {/* CTA */}
+                {item.product ? (
+                  <>
+                    <a
+                      href={generateWA(item.product)}
+                      target="_blank"
+                      className="btn btn-primary w-full mt-2"
+                    >
+                      Tanya via WhatsApp
+                    </a>
+
+                    <Link
+                      href={`/campaign/peace-qurban${ref ? `?ref=${ref}` : ""}`}
+                      className="btn btn-outline w-full text-center"
+                    >
+                      Lihat Detail
+                    </Link>
+                  </>
+                ) : (
+                  <Link
+                    href={`/campaign/peace-qurban${ref ? `?ref=${ref}` : ""}`}
+                    className="btn btn-primary w-full mt-2 text-center"
+                  >
+                    Donasi Sekarang
+                  </Link>
+                )}
+
               </div>
 
-              {/* HOVER LINE */}
-              <div className="absolute bottom-0 left-0 h-[3px] w-0 bg-[rgb(var(--color-primary))] transition-all duration-300 group-hover:w-full" />
-
-            </Link>
+            </div>
           ))}
-        </div>
 
-        {/* ================= NOTE ================= */}
-        <div className="mt-14 max-w-[720px]">
-          <p className="body text-[rgb(var(--color-muted))]">
-            Tidak harus menunggu mampu sepenuhnya untuk berbagi.
-            Bahkan langkah kecil pun bisa menjadi awal dari kebaikan yang besar.
-          </p>
         </div>
 
       </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useSearchParams, useRouter } from "next/navigation";
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState } from "react";
 
 /* ================= TYPES ================= */
 
@@ -15,13 +15,14 @@ type PaymentStatus =
 
 interface PaymentData {
   amount: number;
-  va_number?: string;
-  bank?: string;
-  expiry_time?: string;
+  va_number?: string | null;
+  bank?: string | null;
+  expiry_time?: string | null;
 }
 
 interface CampaignData {
   title: string;
+  slug: string; // 🔥 tambah ini
   collected_amount: number;
   target_amount: number;
 }
@@ -30,11 +31,11 @@ interface CampaignData {
 
 function safeNumber(val: unknown): number {
   const n = Number(val);
-  return isNaN(n) ? 0 : n;
+  return Number.isNaN(n) ? 0 : n;
 }
 
-function formatCurrency(val: unknown): string {
-  return `Rp ${safeNumber(val).toLocaleString("id-ID")}`;
+function formatCurrency(val: number): string {
+  return `Rp ${val.toLocaleString("id-ID")}`;
 }
 
 /* ================= COMPONENT ================= */
@@ -42,20 +43,29 @@ function formatCurrency(val: unknown): string {
 export default function SuccessClient() {
   const searchParams = useSearchParams();
   const router = useRouter();
+
   const donationId = searchParams.get("id");
 
   const [status, setStatus] = useState<PaymentStatus>("checking");
   const [campaign, setCampaign] = useState<CampaignData | null>(null);
   const [payment, setPayment] = useState<PaymentData | null>(null);
 
-  const [redirectCountdown, setRedirectCountdown] = useState(5);
   const [timeLeft, setTimeLeft] = useState("");
+  const [redirectCountdown, setRedirectCountdown] = useState(6);
 
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const statusRef = useRef<PaymentStatus>("checking");
 
-  /* ================= FETCH ================= */
+  /* ================= POLLING ================= */
 
-  const fetchStatus = useCallback(async () => {
+  function stopPolling() {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+  }
+
+  async function fetchStatus() {
     if (!donationId) return;
 
     try {
@@ -65,55 +75,51 @@ export default function SuccessClient() {
 
       if (!res.ok) {
         setStatus("error");
+        stopPolling();
         return;
       }
 
       const data = await res.json();
 
+      const nextStatus: PaymentStatus =
+        data.payment_status === "paid"
+          ? "paid"
+          : data.payment_status === "failed"
+          ? "failed"
+          : data.payment_status === "expired"
+          ? "expired"
+          : "pending";
+
+      statusRef.current = nextStatus;
+      setStatus(nextStatus);
+
       setPayment({
         amount: safeNumber(data.amount),
-        va_number: data.va_number,
-        bank: data.bank,
-        expiry_time: data.expiry_time,
+        va_number: data.va_number ?? null,
+        bank: data.bank ?? null,
+        expiry_time: data.expiry_time ?? null,
       });
 
       setCampaign({
         title: data.campaign?.title ?? "",
-        collected_amount: safeNumber(data.campaign?.collected_amount),
-        target_amount: safeNumber(data.campaign?.target_amount),
+        slug: data.campaign?.slug ?? "", // 🔥 penting
+        collected_amount: safeNumber(
+          data.campaign?.collected_amount
+        ),
+        target_amount: safeNumber(
+          data.campaign?.target_amount
+        ),
       });
 
-      switch (data.payment_status) {
-        case "paid":
-          setStatus("paid");
-          stopPolling();
-          break;
-        case "failed":
-          setStatus("failed");
-          stopPolling();
-          break;
-        case "expired":
-          setStatus("expired");
-          stopPolling();
-          break;
-        default:
-          setStatus("pending");
+      if (nextStatus !== "pending") {
+        stopPolling();
       }
     } catch (err) {
-      console.error("Payment status error:", err);
+      console.error("🔥 Payment status error:", err);
       setStatus("error");
       stopPolling();
     }
-  }, [donationId]);
-
-  /* ================= POLLING ================= */
-
-  const stopPolling = () => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
-  };
+  }
 
   useEffect(() => {
     if (!donationId) {
@@ -123,33 +129,14 @@ export default function SuccessClient() {
 
     fetchStatus();
 
-    intervalRef.current = setInterval(fetchStatus, 3000);
+    intervalRef.current = setInterval(() => {
+      if (statusRef.current === "pending") {
+        fetchStatus();
+      }
+    }, 4000);
 
-    const timeout = setTimeout(stopPolling, 120000);
-
-    return () => {
-      stopPolling();
-      clearTimeout(timeout);
-    };
-  }, [donationId, fetchStatus]);
-
-  /* ================= REDIRECT ================= */
-
-  useEffect(() => {
-    if (status !== "paid") return;
-
-    const timer = setInterval(() => {
-      setRedirectCountdown((prev) => {
-        if (prev <= 1) {
-          router.push("/");
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [status, router]);
+    return () => stopPolling();
+  }, [donationId]);
 
   /* ================= COUNTDOWN ================= */
 
@@ -166,15 +153,32 @@ export default function SuccessClient() {
         return;
       }
 
-      const h = Math.floor(diff / 3600000);
-      const m = Math.floor((diff % 3600000) / 60000);
+      const m = Math.floor(diff / 60000);
       const s = Math.floor((diff % 60000) / 1000);
 
-      setTimeLeft(`${h}j ${m}m ${s}d`);
+      setTimeLeft(`${m}m ${s}s`);
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [payment]);
+  }, [payment?.expiry_time]);
+
+  /* ================= REDIRECT ================= */
+
+  useEffect(() => {
+  if (status !== "paid") return;
+
+  const timer = setInterval(() => {
+    setRedirectCountdown((prev) => {
+      if (prev <= 1) {
+        router.push(buildRedirectUrl());
+        return 0;
+      }
+      return prev - 1;
+    });
+  }, 1000);
+
+  return () => clearInterval(timer);
+}, [status, router]);
 
   /* ================= CALC ================= */
 
@@ -183,141 +187,235 @@ export default function SuccessClient() {
       ? Math.min(
           100,
           Math.round(
-            (campaign.collected_amount / campaign.target_amount) * 100
+            (campaign.collected_amount /
+              campaign.target_amount) *
+              100
           )
         )
       : 0;
+
+  /* ================= SHARE ================= */
+
+  function getAffiliateCode(): string | null {
+    const params = new URLSearchParams(window.location.search);
+    const refFromUrl = params.get("ref");
+
+    if (refFromUrl) return refFromUrl;
+
+    const cookieMatch = document.cookie.match(/affiliate_ref=([^;]+)/);
+    if (cookieMatch) return cookieMatch[1];
+
+    return null;
+  }
+
+  function buildRedirectUrl(): string {
+    const ref = getAffiliateCode();
+
+    if (campaign?.slug) {
+      let url = `/campaign/${campaign.slug}`;
+      if (ref) url += `?ref=${ref}`;
+      return url;
+    }
+
+    // fallback
+    let url = "/";
+    if (ref) url += `?ref=${ref}`;
+    return url;
+  }
+
+  function handleShare() {
+    if (!campaign?.slug) return;
+
+    const ref = getAffiliateCode();
+
+    let url = `${window.location.origin}/campaign/${campaign.slug}`;
+
+    if (ref) {
+      url += ref ? `?ref=${ref}&src=wa` : `?src=wa`;
+    }
+
+    const text = encodeURIComponent(
+      `Saya baru saja berdonasi di program "${campaign.title}" 🙏
+
+  Yuk ikut bantu:
+  ${url}`
+    );
+
+    window.open(`https://wa.me/?text=${text}`, "_blank");
+  }
+
+  
 
   /* ================= UI ================= */
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[rgb(var(--color-surface))] px-4">
 
-      <div className="w-full max-w-md card text-center animate-fadeUp">
+      <div className="w-full max-w-md space-y-5 animate-fadeUp">
 
-        {/* CHECKING */}
-        {status === "checking" && (
-          <>
-            <div className="animate-spin mx-auto mb-6 h-10 w-10 border-4 border-[rgb(var(--color-border))] border-t-[rgb(var(--color-text))] rounded-full" />
-            <h1 className="h3">Memverifikasi Pembayaran...</h1>
-            <p className="caption">Mohon tunggu sebentar</p>
-          </>
-        )}
+        {/* ================= CARD ================= */}
+        <div className="card text-center space-y-4">
 
-        {/* PENDING */}
-        {status === "pending" && payment && (
-          <>
-            <h1 className="h3 mb-2">Selesaikan Pembayaran</h1>
+          {/* CHECKING */}
+          {status === "checking" && (
+            <>
+              <div className="mx-auto h-10 w-10 border-4 border-[rgb(var(--color-border))] border-t-[rgb(var(--color-primary))] rounded-full animate-spin" />
+              <h1 className="h3">Memverifikasi pembayaran...</h1>
+            </>
+          )}
 
-            <div className="card text-left space-y-3 mt-4">
+          {/* PENDING */}
+          {status === "pending" && payment && (
+            <>
+              <h1 className="h3">Selesaikan Pembayaran</h1>
 
-              <div>
-                <p className="caption-subtle">Bank</p>
-                <p className="body font-semibold uppercase">
-                  {payment.bank}
+              <div className="card text-left space-y-3">
+                {payment.bank && (
+                  <div>
+                    <p className="caption-subtle">Bank</p>
+                    <p className="body font-semibold uppercase">
+                      {payment.bank}
+                    </p>
+                  </div>
+                )}
+
+                {payment.va_number && (
+                  <div>
+                    <p className="caption-subtle">VA</p>
+                    <p className="body font-mono">
+                      {payment.va_number}
+                    </p>
+                  </div>
+                )}
+
+                <div>
+                  <p className="caption-subtle">Total</p>
+                  <p className="h3">
+                    {formatCurrency(payment.amount)}
+                  </p>
+                </div>
+
+                {timeLeft && (
+                  <p className="caption text-red-500">
+                    Batas waktu: {timeLeft}
+                  </p>
+                )}
+              </div>
+
+              <button
+                onClick={fetchStatus}
+                className="btn btn-primary w-full"
+              >
+                Saya Sudah Bayar
+              </button>
+            </>
+          )}
+
+          {/* SUCCESS */}
+          {status === "paid" && campaign && (
+            <>
+              <div className="space-y-2">
+                <h1 className="h2 text-[rgb(var(--color-primary))]">
+                  🎉 Donasi Berhasil
+                </h1>
+                <p className="caption">
+                  Terima kasih atas kontribusimu 🙏
                 </p>
               </div>
 
-              <div>
-                <p className="caption-subtle">Virtual Account</p>
-                <p className="body font-mono">
-                  {payment.va_number}
+              {/* AMOUNT */}
+              <div className="text-center">
+                <p className="caption text-[rgb(var(--color-muted))]">
+                  Total Donasi
+                </p>
+                <p className="h2 text-[rgb(var(--color-primary))]">
+                  {formatCurrency(payment?.amount || 0)}
                 </p>
               </div>
 
-              <div>
-                <p className="caption-subtle">Total</p>
-                <p className="h3">
-                  {formatCurrency(payment.amount)}
+              {/* IMPACT */}
+              <div className="card text-left space-y-2">
+                <p className="caption text-[rgb(var(--color-muted))]">
+                  Dampak Donasi Kamu
                 </p>
+                <p className="body">💚 Membantu program berjalan</p>
+                <p className="body">🤲 Menjadi amal jariyah</p>
               </div>
 
-              {timeLeft && (
-                <p className="caption text-red-500">
-                  {timeLeft}
+              {/* PROGRESS */}
+              <div className="text-left">
+                <p className="body font-medium mb-2">
+                  {campaign.title}
                 </p>
-              )}
-            </div>
 
-            <button
-              onClick={fetchStatus}
-              className="btn btn-primary w-full mt-4"
-            >
-              Saya Sudah Bayar
-            </button>
-          </>
-        )}
+                <div className="progress-bar mb-2">
+                  <div
+                    className="progress-fill"
+                    style={{ width: `${percent}%` }}
+                  />
+                </div>
 
-        {/* PAID */}
-        {status === "paid" && campaign && (
-          <>
-            <h1 className="h3 mb-2">Donasi Berhasil 🎉</h1>
+                <div className="flex justify-between caption">
+                  <span>{percent}%</span>
+                  <span>
+                    {formatCurrency(
+                      campaign.collected_amount
+                    )}
+                  </span>
+                </div>
+              </div>
 
-            <p className="caption mb-4">
-              Terima kasih atas donasi
-              <br />
-              <span className="text-primary font-semibold">
-                {formatCurrency(payment?.amount)}
-              </span>
-            </p>
+              {/* CTA */}
+              <div className="space-y-2 pt-2">
+                <button
+                  onClick={() => router.push(buildRedirectUrl())}
+                  className="btn btn-primary w-full"
+                >
+                  🔁 Lanjutkan Kebaikan
+                </button>
 
-            <div className="text-left mb-6">
-              <p className="body font-medium mb-2">
-                {campaign.title}
+                <button
+                  onClick={handleShare}
+                  className="btn btn-outline w-full"
+                >
+                  📲 Ajak Teman Donasi
+                </button>
+              </div>
+
+              {/* AUTO REDIRECT */}
+              <p className="caption text-[rgb(var(--color-muted))]">
+                Kembali otomatis dalam {redirectCountdown} detik
               </p>
+            </>
+          )}
 
-              <div className="progress-bar mb-2">
-                <div
-                  className="progress-fill"
-                  style={{ width: `${percent}%` }}
-                />
-              </div>
+          {/* FAILED */}
+          {status === "failed" && (
+            <button
+              onClick={() => router.back()}
+              className="btn btn-primary w-full"
+            >
+              Coba Lagi
+            </button>
+          )}
 
-              <div className="flex justify-between caption">
-                <span>{percent}%</span>
-                <span>
-                  {formatCurrency(campaign.collected_amount)}
-                </span>
-              </div>
-            </div>
-
-            <p className="caption mb-4">
-              Kembali dalam {redirectCountdown} detik...
-            </p>
-
+          {/* EXPIRED */}
+          {status === "expired" && (
             <button
               onClick={() => router.push("/")}
               className="btn btn-primary w-full"
             >
-              Kembali Sekarang
+              Donasi Ulang
             </button>
-          </>
-        )}
+          )}
 
-        {/* ERROR STATES */}
-        {status === "failed" && (
-          <button
-            onClick={() => router.back()}
-            className="btn btn-primary w-full"
-          >
-            Coba Lagi
-          </button>
-        )}
-
-        {status === "expired" && (
-          <button
-            onClick={() => router.push("/")}
-            className="btn btn-primary w-full"
-          >
-            Donasi Ulang
-          </button>
-        )}
-
-        {status === "error" && (
-          <p className="caption">
-            Terjadi kesalahan saat verifikasi
-          </p>
-        )}
+          {/* ERROR */}
+          {status === "error" && (
+            <p className="caption">
+              Terjadi kesalahan saat verifikasi
+            </p>
+          )}
+        </div>
       </div>
     </div>
   );

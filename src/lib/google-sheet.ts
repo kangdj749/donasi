@@ -7,7 +7,7 @@ import { getSheetsClient } from "./google-sheet-client";
 const SHEET_ID = process.env.GOOGLE_SHEET_ID as string;
 
 export const RANGE = {
-  CAMPAIGNS: "campaigns!A:U",
+  CAMPAIGNS: "campaigns!A:V",
   CAMPAIGN_STORY: "campaign_story!A:H",
   DONATIONS: "donations!A:W",
   PRAYERS: "prayers!A:M",
@@ -15,6 +15,7 @@ export const RANGE = {
   DISBURSEMENTS: "disbursements!A:G",
   AMENS: "amens!A:D",
   ORGANIZATIONS: "organizations!A:J",
+  CAMPAIGN_PRODUCTS: "campaign_products!A:L",
 } as const;
 
 /* =========================

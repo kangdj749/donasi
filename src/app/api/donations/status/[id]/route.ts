@@ -1,9 +1,13 @@
 import { NextResponse } from "next/server";
 import { google } from "googleapis";
 
+/* ================= CONFIG ================= */
+
 const SHEET_ID = process.env.GOOGLE_SHEET_ID!;
-const DONATION_SHEET_NAME = "donations";
-const CAMPAIGN_SHEET_NAME = "campaigns";
+const DONATION_SHEET = "donations";
+const CAMPAIGN_SHEET = "campaigns";
+
+/* ================= AUTH ================= */
 
 const auth = new google.auth.GoogleAuth({
   credentials: {
@@ -15,66 +19,83 @@ const auth = new google.auth.GoogleAuth({
 
 const sheets = google.sheets({ version: "v4", auth });
 
+/* ================= TYPES ================= */
+
+type PaymentStatus = "pending" | "paid" | "failed" | "expired";
+
+/* ================= HANDLER ================= */
+
 export async function GET(
-  req: Request,
+  _req: Request,
   { params }: { params: { id: string } }
 ) {
   try {
-    const donationId = params.id;
+    const donationId = params.id?.trim();
 
-    /* ================= GET DONATION ================= */
+    if (!donationId) {
+      return NextResponse.json(
+        { error: "Invalid ID" },
+        { status: 400 }
+      );
+    }
+
+    /* ================= GET DONATIONS ================= */
 
     const donationRes = await sheets.spreadsheets.values.get({
       spreadsheetId: SHEET_ID,
-      range: `${DONATION_SHEET_NAME}!A:Z`,
+      range: `${DONATION_SHEET}!A:Z`,
     });
 
-    const donationRows = donationRes.data.values;
-    if (!donationRows)
-      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    const donationRows = donationRes.data.values ?? [];
 
     const donation = donationRows.find(
-      (row) => row[0]?.toString().trim() === donationId.trim()
+      (row) => row[0]?.toString().trim() === donationId
     );
 
-    if (!donation)
-      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    if (!donation) {
+      return NextResponse.json(
+        { error: "Donation not found" },
+        { status: 404 }
+      );
+    }
 
     /*
-      ASUMSI STRUKTUR SHEET DONATIONS:
-      0 = id
-      1 = campaign_slug
-      2 = donor_name
-      4 = amount
-      5 = payment_status
-      6 = bank
-      7 = va_number
-      8 = message
-      9 = expiry_time
-      10 = created_at
+      STRUCTURE (FIXED):
+      0 id
+      1 campaign_id
+      7 amount
+      9 payment_status ✅
+      12 message
+      14 created_at
+      20 campaign_slug
+      21 src
     */
 
-    const campaignId = donation[1];
+    const campaignId = donation[1]?.toString();
+    const amount = Number(donation[7] || 0);
+    const payment_status =
+      (donation[9] as PaymentStatus) || "pending";
 
     /* ================= GET CAMPAIGN ================= */
 
-    const campaignRes = await sheets.spreadsheets.values.get({
-      spreadsheetId: SHEET_ID,
-      range: `${CAMPAIGN_SHEET_NAME}!A:Z`,
-    });
-
-    const campaignRows = campaignRes.data.values;
-
     let campaignData = null;
 
-    if (campaignRows) {
+    if (campaignId) {
+      const campaignRes = await sheets.spreadsheets.values.get({
+        spreadsheetId: SHEET_ID,
+        range: `${CAMPAIGN_SHEET}!A:Z`,
+      });
+
+      const campaignRows = campaignRes.data.values ?? [];
+
       const campaign = campaignRows.find(
         (row) => row[0]?.toString().trim() === campaignId
       );
 
       if (campaign) {
         campaignData = {
-          title: campaign[3],
+          title: campaign[3] ?? "",
+          slug: campaign[2], // 🔥 tambahin ini (kolom slug)
           collected_amount: Number(campaign[9] || 0),
           target_amount: Number(campaign[8] || 0),
         };
@@ -84,15 +105,18 @@ export async function GET(
     /* ================= RESPONSE ================= */
 
     return NextResponse.json({
-      payment_status: donation[5] || "pending",
-      amount: Number(donation[4] || 0),
-      va_number: donation[7] || null,
-      bank: donation[6] || null,
-      expiry_time: donation[9] || null,
+      payment_status,
+      amount,
       campaign: campaignData,
+
+      // optional (biar gak error di FE)
+      va_number: null,
+      bank: null,
+      expiry_time: null,
     });
   } catch (error) {
-    console.error(error);
+    console.error("STATUS API ERROR:", error);
+
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
