@@ -2,16 +2,12 @@
 
 import { usePathname } from "next/navigation";
 import AffiliateLink from "@/components/system/AffiliateLink";
-import { ReactNode } from "react";
 
 /* ================= TYPES ================= */
-
 
 type Props = {
   slug: string;
   prayersCount: number;
-  donors?: ReactNode;
-  updates?: ReactNode;
 };
 
 /* ================= CONFIG ================= */
@@ -53,6 +49,12 @@ export default function CampaignTabs({
       label: "Donatur",
       href: `/campaign/${slug}/donors`,
     },
+    // future ready
+    // {
+    //   key: "fundraiser",
+    //   label: "Fundraiser",
+    //   href: `/campaign/${slug}/fundraiser`,
+    // },
   ];
 
   const isActive = (href: string) => {
@@ -63,12 +65,21 @@ export default function CampaignTabs({
 
   return (
     <div className="w-full">
-
       <div className="sticky top-0 z-30 backdrop-blur bg-[rgb(var(--color-bg))]/90 border-b border-[rgb(var(--color-border))]">
 
         <div className="px-2 py-2">
-          <div className="flex gap-1 overflow-x-auto no-scrollbar">
 
+          {/* 🔥 KEY IMPROVEMENT */}
+          <div
+            className="
+              grid
+              grid-flow-col
+              auto-cols-[minmax(0,1fr)]
+              gap-1
+
+              md:flex md:overflow-x-auto md:no-scrollbar
+            "
+          >
             {tabs.map((tab) => {
               const active = isActive(tab.href);
 
@@ -77,8 +88,12 @@ export default function CampaignTabs({
                   key={tab.key}
                   href={tab.href}
                   className={`
-                    relative min-w-[92px] px-3 py-2 rounded-full transition-all duration-200
+                    relative
+                    px-3 py-2 rounded-full
+                    transition-all duration-200
+
                     flex items-center justify-center gap-1
+                    text-center
 
                     ${
                       active
@@ -90,7 +105,7 @@ export default function CampaignTabs({
                   {/* TEXT */}
                   <span
                     className={`
-                      caption font-medium transition-colors
+                      caption font-medium whitespace-nowrap
                       ${
                         active
                           ? "text-primary"
@@ -102,27 +117,26 @@ export default function CampaignTabs({
                   </span>
 
                   {/* BADGE */}
-                  {tab.badge !== undefined &&
-                    tab.badge > 0 && (
-                      <span
-                        className={`
-                          px-1.5 py-0.5 rounded-full
-                          caption-subtle
-                          ${
-                            active
-                              ? "bg-[rgb(var(--color-bg))] text-primary"
-                              : "bg-[rgb(var(--color-soft))] text-[rgb(var(--color-muted))]"
-                          }
-                        `}
-                      >
-                        {tab.badge}
-                      </span>
-                    )}
+                  {tab.badge !== undefined && tab.badge > 0 && (
+                    <span
+                      className={`
+                        px-1.5 py-0.5 rounded-full
+                        caption-subtle
+                        ${
+                          active
+                            ? "bg-[rgb(var(--color-bg))] text-primary"
+                            : "bg-[rgb(var(--color-soft))] text-[rgb(var(--color-muted))]"
+                        }
+                      `}
+                    >
+                      {tab.badge}
+                    </span>
+                  )}
                 </AffiliateLink>
               );
             })}
-
           </div>
+
         </div>
       </div>
     </div>
