@@ -53,7 +53,7 @@ export default function ProgramSection() {
   const { ref, src } = useAffiliateContext()
 
   function generateWA(product: string) {
-    const phone = "628123456789"
+    const phone = "6281322817712"
 
     const message = `
 Assalamu’alaikum kak 🙏
