@@ -108,7 +108,7 @@ export default async function PrayerDetailPage({
 
   return (
     <div className="min-h-screen bg-[rgb(var(--color-surface))] flex justify-center">
-      <div className="container-main bg-[rgb(var(--color-bg))] pb-32">
+      <div className="container-narrow bg-[rgb(var(--color-bg))] pb-32">
 
         {/* JSON LD */}
         <script
