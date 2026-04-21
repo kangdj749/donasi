@@ -2,9 +2,10 @@
 
 import Image from "next/image"
 import Link from "next/link"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { cloudinaryImage } from "@/lib/cloudinaryImage"
+import { useAffiliateContext } from "@/components/system/AffiliateContext"
 
 const slides = [
   {
@@ -24,6 +25,8 @@ const slides = [
 export default function HeroSection() {
   const [index, setIndex] = useState(0)
 
+  const { ref, src } = useAffiliateContext()
+
   useEffect(() => {
     const t = setInterval(() => {
       setIndex((i) => (i + 1) % slides.length)
@@ -33,6 +36,45 @@ export default function HeroSection() {
   }, [])
 
   const slide = slides[index]
+
+  /* ================= BUILD URL ================= */
+
+  function buildUrl(base: string, params: Record<string, string | null>) {
+    const search = new URLSearchParams()
+
+    Object.entries(params).forEach(([key, val]) => {
+        if (val) search.set(key, val)
+    })
+
+    return search.toString() ? `${base}?${search.toString()}` : base
+    }
+
+    const campaignUrl = useMemo(() => {
+        return buildUrl("/campaign/peace-qurban", {
+            ref,
+            src,
+        })
+        }, [ref, src])
+
+  const waUrl = useMemo(() => {
+    const phone = "6281224128899" // 🔥 ganti sesuai kebutuhan
+
+    const message = encodeURIComponent(
+      `Assalamu'alaikum,
+
+Saya tertarik dengan program Peace Qurban 🙏
+
+Mohon info lebih lanjut.
+
+Ref: ${ref || "-"}
+Source: ${src || "hero"}
+Link: ${typeof window !== "undefined" ? window.location.origin + campaignUrl : ""}`
+    )
+
+    return `https://wa.me/${phone}?text=${message}`
+  }, [ref, src, campaignUrl])
+
+  /* ================= UI ================= */
 
   return (
     <section
@@ -79,11 +121,7 @@ export default function HeroSection() {
 
       {/* ================= CONTENT ================= */}
       <div className="relative z-10 flex items-center min-h-[88vh] md:h-full">
-
-        {/* 🔥 KEY: container-wide + padding manual */}
         <div className="container-wide w-full">
-
-          {/* 🔥 LEFT ALIGN SYSTEM */}
           <div className="max-w-[720px]">
 
             {/* LABEL */}
@@ -150,8 +188,9 @@ export default function HeroSection() {
               animate={{ opacity: 1, y: 0 }}
               className="flex flex-col sm:flex-row gap-3 sm:gap-4"
             >
+              {/* 🔥 CAMPAIGN LINK (TRACKED) */}
               <Link
-                href="/campaign/peace-qurban"
+                href={campaignUrl}
                 className="
                   btn
                   bg-[rgb(var(--color-accent))]
@@ -166,8 +205,10 @@ export default function HeroSection() {
                 Tunaikan Qurban Sekarang
               </Link>
 
-              <Link
-                href="#"
+              {/* 🔥 WA LINK (TRACKED) */}
+              <a
+                href={waUrl}
+                target="_blank"
                 className="
                   text-[rgb(var(--color-white))]/80
                   text-[12px]
@@ -181,7 +222,7 @@ export default function HeroSection() {
                 "
               >
                 Konsultasi via WhatsApp
-              </Link>
+              </a>
             </motion.div>
 
             {/* TRUST */}
