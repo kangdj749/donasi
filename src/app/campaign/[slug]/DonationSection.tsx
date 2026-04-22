@@ -30,7 +30,7 @@ export default function DonationSection({
     <>
       {/* ================= STICKY CTA ================= */}
       <div className="fixed bottom-0 left-0 right-0 z-40 flex justify-center border-t border-[rgb(var(--color-border))] bg-[rgb(var(--color-bg))]/90 backdrop-blur">
-        <div className="container-main p-3">
+        <div className="container-narrow p-3">
           <button
             data-donation-trigger
             onClick={() => setOpen(true)}

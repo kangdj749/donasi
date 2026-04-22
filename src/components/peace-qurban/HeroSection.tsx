@@ -57,7 +57,7 @@ export default function HeroSection() {
         }, [ref, src])
 
   const waUrl = useMemo(() => {
-    const phone = "6281224128899" // 🔥 ganti sesuai kebutuhan
+    const phone = "6281322817712" // 🔥 ganti sesuai kebutuhan
 
     const message = encodeURIComponent(
       `Assalamu'alaikum,
