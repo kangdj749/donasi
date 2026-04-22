@@ -29,8 +29,8 @@ type SnapResult = {
 
 /* ================= CONST ================= */
 
-const PRESET_AMOUNTS = [20000, 50000, 100000, 200000];
-const MIN_AMOUNT = 10000;
+const PRESET_AMOUNTS = [10000, 50000, 100000, 200000];
+const MIN_AMOUNT = 2000;
 
 /* ================= COMPONENT ================= */
 
