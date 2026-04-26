@@ -1,80 +1,124 @@
-import { NextResponse } from "next/server";
-import midtransClient from "midtrans-client";
+import { NextResponse } from "next/server"
+import midtransClient from "midtrans-client"
 
-import { snap } from "@/lib/midtrans";
+import { snap } from "@/lib/midtrans"
 import {
   appendDonation,
   updateSnapToken,
   getCampaignByIdOrSlug,
-} from "@/lib/google-sheet-service";
+  getAffiliateByRefCode,
+} from "@/lib/google-sheet-service"
 
-import { appendPrayerRow } from "@/lib/google-sheet";
+import { appendPrayerRow } from "@/lib/google-sheet"
 
 /* ================= TYPES ================= */
 
 interface Body {
-  campaign_id: string;
-  organization_slug?: string;
-  campaign_slug?: string;
+  campaign_id: string
+  organization_slug?: string
+  campaign_slug?: string
 
-  donor_name?: string;
-  donor_contact?: string;
-  amount: number;
-  message?: string;
-  is_anonymous?: boolean;
+  donor_name?: string
+  donor_contact?: string
+  amount: number
+  message?: string
+  is_anonymous?: boolean
 
-  ref_code?: string;
-  ref?: string;
-  src?: string;
+  ref_code?: string
+  ref?: string
+  src?: string
 
-  payment_method?: string;
+  payment_method?: string
 }
 
 /* ================= HELPERS ================= */
 
 function sanitizeName(name?: string, anonymous?: boolean): string {
-  if (anonymous || !name?.trim()) return "Hamba Allah";
-  return name.trim();
+  if (anonymous || !name?.trim()) return "Hamba Allah"
+  return name.trim()
 }
 
 function normalizeAmount(amount: number): number {
-  return Math.max(1000, Math.floor(amount));
+  return Math.max(1000, Math.floor(amount))
 }
 
 function isEmail(val: string): boolean {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)
 }
 
 /* ================= ROUTE ================= */
 
 export async function POST(req: Request) {
   try {
-    const body: Body = await req.json();
+    const body: Body = await req.json()
+
+    console.log("\n==============================")
+    console.log("🚀 CREATE DONATION START")
+    console.log(body)
+
+    /* ================= VALIDATION ================= */
 
     if (!body.campaign_id) {
-      return NextResponse.json({ error: "CAMPAIGN_ID_REQUIRED" }, { status: 400 });
+      return NextResponse.json(
+        { error: "CAMPAIGN_ID_REQUIRED" },
+        { status: 400 }
+      )
     }
 
     if (!body.amount || body.amount < 1000) {
-      return NextResponse.json({ error: "INVALID_AMOUNT" }, { status: 400 });
+      return NextResponse.json(
+        { error: "INVALID_AMOUNT" },
+        { status: 400 }
+      )
     }
 
-    const campaign = await getCampaignByIdOrSlug(body.campaign_id);
+    /* ================= GET CAMPAIGN ================= */
+
+    const campaign = await getCampaignByIdOrSlug(body.campaign_id)
 
     if (!campaign) {
-      return NextResponse.json({ error: "CAMPAIGN_NOT_FOUND" }, { status: 404 });
+      return NextResponse.json(
+        { error: "CAMPAIGN_NOT_FOUND" },
+        { status: 404 }
+      )
     }
 
-    const campaignId = String(campaign.id);
-    const organizationId = String(campaign.organization_id ?? "");
+    const campaignId = String(campaign.id)
+    const organizationId = String(campaign.organization_id ?? "")
 
-    const donationId = `DON-${Date.now()}`;
-    const amount = normalizeAmount(body.amount);
+    /* ================= BASIC DATA ================= */
 
-    const donorName = sanitizeName(body.donor_name, body.is_anonymous);
-    const donorContact = body.donor_contact ?? "";
+    const donationId = `DON-${Date.now()}`
+    const amount = normalizeAmount(body.amount)
 
-    const now = new Date().toISOString();
+    const donorName = sanitizeName(body.donor_name, body.is_anonymous)
+    const donorContact = body.donor_contact ?? ""
+
+    const now = new Date().toISOString()
+
+    /* ================= RESOLVE AFFILIATE ================= */
+
+    const refCode =
+      body.ref_code?.trim() ||
+      body.ref?.trim() ||
+      ""
+
+    let affiliateId = ""
+
+    if (refCode) {
+      try {
+        const affiliate = await getAffiliateByRefCode(refCode)
+
+        if (affiliate?.id) {
+          affiliateId = String(affiliate.id)
+          console.log("🎯 AFFILIATE FOUND:", affiliateId)
+        } else {
+          console.log("⚠️ REF CODE NOT FOUND:", refCode)
+        }
+      } catch (err) {
+        console.error("🔥 AFFILIATE RESOLVE ERROR:", err)
+      }
+    }
 
     /* ================= INSERT DONATION ================= */
 
@@ -83,8 +127,8 @@ export async function POST(req: Request) {
       campaign_id: campaignId,
       organization_id: organizationId,
 
-      affiliate_id: "",
-      ref_code: body.ref_code ?? "",
+      affiliate_id: affiliateId, // 🔥 FIX UTAMA
+      ref_code: refCode,
 
       donor_name: donorName,
       donor_contact: donorContact,
@@ -102,7 +146,7 @@ export async function POST(req: Request) {
 
       created_at: now,
 
-      ref: body.ref ?? body.ref_code ?? "",
+      ref: refCode,
       payment_method: body.payment_method ?? "midtrans",
 
       fee: 0,
@@ -111,9 +155,11 @@ export async function POST(req: Request) {
       organization_slug: body.organization_slug ?? "",
       campaign_slug: body.campaign_slug ?? "",
       src: body.src ?? "direct",
-    });
+    })
 
-    /* ================= CREATE PRAYER (SOURCE OF TRUTH) ================= */
+    console.log("✅ DONATION INSERTED:", donationId)
+
+    /* ================= CREATE PRAYER ================= */
 
     if (body.message?.trim()) {
       const prayerRow: string[] = [
@@ -127,12 +173,12 @@ export async function POST(req: Request) {
         " ",
         "0",
         "0",
-        String(body.ref ?? body.ref_code ?? ""),
+        refCode,
         String(body.src ?? "direct"),
-        new Date().toISOString(),
-      ];
+        now,
+      ]
 
-      await appendPrayerRow(prayerRow);
+      await appendPrayerRow(prayerRow)
     }
 
     /* ================= CREATE SNAP ================= */
@@ -140,11 +186,11 @@ export async function POST(req: Request) {
     type SnapPayloadExtended =
       midtransClient.SnapTransactionParameters & {
         customer_details?: {
-          first_name?: string;
-          phone?: string;
-          email?: string;
-        };
-      };
+          first_name?: string
+          phone?: string
+          email?: string
+        }
+      }
 
     const payload: SnapPayloadExtended = {
       transaction_details: {
@@ -156,27 +202,29 @@ export async function POST(req: Request) {
         phone: isEmail(donorContact) ? undefined : donorContact,
         email: isEmail(donorContact) ? donorContact : undefined,
       },
-    };
-
-    const transaction = await snap.createTransaction(payload);
-
-    if (!transaction?.token) {
-      throw new Error("FAILED_CREATE_TRANSACTION");
     }
 
-    await updateSnapToken(donationId, transaction.token);
+    const transaction = await snap.createTransaction(payload)
+
+    if (!transaction?.token) {
+      throw new Error("FAILED_CREATE_TRANSACTION")
+    }
+
+    await updateSnapToken(donationId, transaction.token)
+
+    console.log("💳 SNAP CREATED:", donationId)
 
     return NextResponse.json({
       success: true,
       token: transaction.token,
       donationId,
-    });
+    })
   } catch (err) {
-    console.error("🔥 CREATE DONATION ERROR:", err);
+    console.error("🔥 CREATE DONATION ERROR:", err)
 
     return NextResponse.json(
       { error: "Failed to create donation" },
       { status: 500 }
-    );
+    )
   }
 }

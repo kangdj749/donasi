@@ -16,6 +16,7 @@ export const RANGE = {
   AMENS: "amens!A:D",
   ORGANIZATIONS: "organizations!A:J",
   CAMPAIGN_PRODUCTS: "campaign_products!A:L",
+  AFFILIATES: "AFFILIATES!A:N",
 } as const;
 
 /* =========================

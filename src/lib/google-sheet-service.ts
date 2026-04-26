@@ -437,21 +437,32 @@ export async function getDonationRaw(
         campaign_id: get("campaign_id", 1),
         organization_id: get("organization_id", 2),
 
+        affiliate_id: get("affiliate_id", 3),
+        ref_code: get("ref_code", 4),
+        
         donor_name: get("donor_name", 5),
         donor_contact: get("donor_contact", 6),
+
         amount: Number(get("amount", 7)),
+        commission_amount: Number(get("commission_amount", 8)),
         payment_status: get("payment_status", 9),
 
+        midtrans_id: get("midtrans_id", 10),
+        snap_token: get("snap_token", 11),
+        
         message: get("message", 12),
         is_anonymous: get("is_anonymous", 13),
-
+        created_at: get("created_at", 14),
         ref: get("ref", 15),
         payment_method: get("payment_method", 16),
+
+        fee: get("fee", 17),
+        net_amount: get("net_amount", 18),
 
         organization_slug: get("organization_slug", 19),
         campaign_slug: get("campaign_slug", 20),
         src: get("src", 21),
-        prayer_created: get("prayer_created", 21),
+        
       };
 
     }

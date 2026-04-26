@@ -3,7 +3,7 @@
 ====================================================== */
 
 export const AFFILIATE_KEY = "affiliate_data";
-export const AFFILIATE_COOKIE_KEY = "affiliate_ref";
+export const AFFILIATE_COOKIE_KEY = "campaign_ref";
 export const AFFILIATE_EXPIRY_DAYS = 30;
 
 const DAY = 1000 * 60 * 60 * 24;

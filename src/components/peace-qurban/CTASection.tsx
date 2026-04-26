@@ -4,8 +4,75 @@ import Link from "next/link"
 import Image from "next/image"
 import { motion } from "framer-motion"
 import { cloudinaryImage } from "@/lib/cloudinaryImage"
+import { useAffiliateContext } from "@/components/system/AffiliateContext"
+import { useMemo } from "react"
 
-export default function CTASection() {
+/* ================= TYPES ================= */
+
+type Props = {
+  refCode?: string
+  src?: string
+}
+
+/* ================= COMPONENT ================= */
+
+export default function CTASection(props: Props) {
+  const ctx = useAffiliateContext()
+
+  /* 🔥 PRIORITY:
+     1. props (server)
+     2. context (client)
+  */
+  const ref = props.refCode ?? ctx.ref
+  const src = props.src ?? ctx.src ?? "cta"
+
+  /* ================= URL BUILDER ================= */
+  function buildUrl(base: string) {
+    try {
+      const url = new URL(base, typeof window !== "undefined" ? window.location.origin : "http://localhost")
+
+      if (ref) url.searchParams.set("ref", ref)
+      if (src) url.searchParams.set("src", src)
+
+      const query = url.searchParams.toString()
+      return query ? `${url.pathname}?${query}` : url.pathname
+    } catch {
+      return base
+    }
+  }
+
+  /* ================= CAMPAIGN URL ================= */
+  const campaignUrl = useMemo(() => {
+    return buildUrl("/campaign/peace-qurban")
+  }, [ref, src])
+
+  /* ================= WA URL ================= */
+  const waUrl = useMemo(() => {
+    const phone = "6281322817712"
+
+    const fullUrl =
+      typeof window !== "undefined"
+        ? window.location.origin + campaignUrl
+        : campaignUrl
+
+    const message = `
+Assalamu’alaikum kak 🙏
+
+Saya ingin konsultasi terkait program:
+*Peace Qurban*
+
+Mohon dibantu info lebih lanjut ya 🙏
+${ref ? `\nRef: ${ref}` : ""}
+${src ? `\nSource: ${src}` : ""}
+
+🔗 ${fullUrl}
+    `
+
+    return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`
+  }, [ref, src, campaignUrl])
+
+  /* ================= UI ================= */
+
   return (
     <section
       className="
@@ -66,7 +133,7 @@ export default function CTASection() {
 
             {/* PRIMARY */}
             <Link
-              href="/campaign/peace-qurban"
+              href={campaignUrl}
               className="
                 btn
                 bg-[rgb(var(--color-accent))]
@@ -83,8 +150,10 @@ export default function CTASection() {
             </Link>
 
             {/* SECONDARY */}
-            <Link
-              href="#"
+            <a
+              href={waUrl}
+              target="_blank"
+              rel="noopener noreferrer"
               className="
                 btn
                 border border-white/30
@@ -97,7 +166,7 @@ export default function CTASection() {
               "
             >
               👉 Konsultasi dengan Tim Kami
-            </Link>
+            </a>
           </div>
 
           {/* TRUST LINE */}

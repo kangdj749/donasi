@@ -4,6 +4,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { useAffiliateContext } from "@/components/system/AffiliateContext"
 import { cloudinaryImage } from "@/lib/cloudinaryImage"
+import { useMemo } from "react"
 
 type ProgramItem = {
   title: string
@@ -52,6 +53,23 @@ const programs: ProgramItem[] = [
 export default function ProgramSection() {
   const { ref, src } = useAffiliateContext()
 
+  /* ================= URL BUILDER ================= */
+  function buildUrl(base: string) {
+    const params = new URLSearchParams()
+
+    if (ref) params.set("ref", ref)
+    if (src) params.set("src", src)
+
+    const query = params.toString()
+    return query ? `${base}?${query}` : base
+  }
+
+  /* ================= CAMPAIGN URL ================= */
+  const campaignUrl = useMemo(() => {
+    return buildUrl("/campaign/peace-qurban")
+  }, [ref, src])
+
+  /* ================= WA GENERATOR ================= */
   function generateWA(product: string) {
     const phone = "6281322817712"
 
@@ -67,10 +85,13 @@ Pilihan:
 Mohon info detail & proses selanjutnya ya kak 🙏
 ${ref ? `\nRef: ${ref}` : ""}
 ${src ? `\nSource: ${src}` : ""}
-`
+${typeof window !== "undefined" ? `\nLink: ${window.location.origin + campaignUrl}` : ""}
+    `
 
     return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`
   }
+
+  /* ================= UI ================= */
 
   return (
     <section className="relative section bg-[rgb(var(--color-bg))] overflow-hidden">
@@ -154,7 +175,7 @@ ${src ? `\nSource: ${src}` : ""}
                     </a>
 
                     <Link
-                      href={`/campaign/peace-qurban${ref ? `?ref=${ref}` : ""}`}
+                      href={campaignUrl}
                       className="btn btn-outline w-full text-center"
                     >
                       Lihat Detail
@@ -162,7 +183,7 @@ ${src ? `\nSource: ${src}` : ""}
                   </>
                 ) : (
                   <Link
-                    href={`/campaign/peace-qurban${ref ? `?ref=${ref}` : ""}`}
+                    href={campaignUrl}
                     className="btn btn-primary w-full mt-2 text-center"
                   >
                     Donasi Sekarang

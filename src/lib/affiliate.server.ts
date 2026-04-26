@@ -16,7 +16,7 @@ export function getAffiliateServer(
     const cookieStore = cookies();
 
     const cookieRef =
-      cookieStore.get("affiliate_ref")?.value ?? "";
+      cookieStore.get("campaign_ref")?.value ?? "";
 
     const ref =
       searchParams?.ref?.trim() ||

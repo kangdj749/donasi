@@ -22,7 +22,7 @@ import AffiliateShareBox from "@/components/campaign/AffiliateShareBox";
 import CampaignUpdatesTimeline from "@/components/campaign/CampaignUpdatesTimeline";
 
 import DonationSection from "./DonationSection";
-import CampaignClientWrapper from "./CampaignClientWrapper"
+import CampaignClientWrapper from "./CampaignClientWrapper";
 
 /* ================= CONFIG ================= */
 
@@ -48,15 +48,45 @@ async function safeFetch<T>(
 
 /* ================= LOGIC ================= */
 
-/**
- * 🔥 PROGRESS RULE
- * - donation → show
- * - event → show
- * - qurban → show (karena ada sedekah qurban)
- * - zakat → optional (bisa kamu decide nanti)
- */
 function shouldShowProgress(type: string): boolean {
   return ["donation", "event", "qurban"].includes(type);
+}
+
+/* ================= SEO ================= */
+
+export async function generateMetadata({
+  params,
+}: {
+  params: { slug: string };
+}) {
+  const campaign = await safeFetch(
+    () => getCampaignBySlug(params.slug),
+    null
+  );
+
+  if (!campaign) {
+    return {
+      title: "Campaign tidak ditemukan",
+    };
+  }
+
+  return {
+    title: campaign.title,
+    description:
+      campaign.short_tagline ||
+      "Salurkan donasi terbaik Anda sekarang.",
+    openGraph: {
+      title: campaign.title,
+      description:
+        campaign.short_tagline ||
+        "Salurkan donasi terbaik Anda sekarang.",
+      images: [
+        {
+          url: campaign.hero_image_public_id || "",
+        },
+      ],
+    },
+  };
 }
 
 /* ================= PAGE ================= */
@@ -66,7 +96,7 @@ export default async function CampaignPage({
   searchParams,
 }: {
   params: { slug: string };
-  searchParams?: { ref?: string };
+  searchParams?: { ref?: string; src?: string };
 }) {
   const campaign = await safeFetch(
     () => getCampaignBySlug(params.slug),
@@ -97,6 +127,7 @@ export default async function CampaignPage({
   /* ================= AFFILIATE ================= */
 
   let affiliateCode: string | null = null;
+  let affiliateSource: string | null = null;
 
   try {
     const cookieStore = cookies();
@@ -108,8 +139,13 @@ export default async function CampaignPage({
       searchParams?.ref?.trim() ||
       cookieRef ||
       null;
+
+    affiliateSource =
+      searchParams?.src?.trim() ||
+      "direct";
   } catch {
     affiliateCode = searchParams?.ref ?? null;
+    affiliateSource = searchParams?.src ?? "direct";
   }
 
   /* ================= UI ================= */
@@ -144,7 +180,6 @@ export default async function CampaignPage({
             totalDonors={trustStats.totalDonors}
           />
 
-          {/* 🔥 PROGRESS */}
           {shouldShowProgress(type) && (
             <div className="card space-y-4">
               <span className="caption text-[rgb(var(--color-muted))]">
@@ -160,7 +195,7 @@ export default async function CampaignPage({
           )}
         </div>
 
-        {/* 🔥 PRODUCT (QURBAN ONLY) */}
+        {/* PRODUCT */}
         {type === "qurban" && products.length > 0 && (
           <CampaignClientWrapper
             products={products}
@@ -222,7 +257,7 @@ export default async function CampaignPage({
           />
         </div>
 
-        {/* 🔥 GLOBAL DONATION CTA */}
+        {/* DONATION */}
         <DonationSection
           campaignId={campaign.id}
           organizationId={campaign.organization_id}

@@ -7,25 +7,68 @@ import { motion, AnimatePresence } from "framer-motion"
 import { cloudinaryImage } from "@/lib/cloudinaryImage"
 import { useAffiliateContext } from "@/components/system/AffiliateContext"
 
+/* ================= TYPES ================= */
+
+type Props = {
+  refCode?: string
+  src?: string
+}
+
+/* ================= DATA ================= */
+
 const slides = [
   {
-    image: "https://res.cloudinary.com/de7fqcvpf/image/upload/v1776504978/penerima-peace-qurban_fyowsq.jpg",
+    image:
+      "https://res.cloudinary.com/de7fqcvpf/image/upload/v1776504978/penerima-peace-qurban_fyowsq.jpg",
     title: "Qurban Kita, Harapan Mereka",
     subtitle:
       "Masih banyak saudara kita di pelosok negeri yang jarang merasakan daging qurban.",
   },
   {
-    image: "https://res.cloudinary.com/de7fqcvpf/image/upload/v1776504987/proses-qurban-bondowoso_utfay9.jpg",
+    image:
+      "https://res.cloudinary.com/de7fqcvpf/image/upload/v1776504987/proses-qurban-bondowoso_utfay9.jpg",
     title: "Jangkau Mereka yang Membutuhkan",
     subtitle:
       "Salurkan qurban Anda ke daerah 3T, dhuafa, dan penyintas bencana.",
   },
 ]
 
-export default function HeroSection() {
+/* ================= HELPERS ================= */
+
+function buildAffiliateUrl(
+  base: string,
+  ref?: string,
+  src?: string
+) {
+  try {
+    const url = new URL(base, window.location.origin)
+
+    if (ref) url.searchParams.set("ref", ref)
+    if (src) url.searchParams.set("src", src)
+
+    const query = url.searchParams.toString()
+
+    return query ? `${url.pathname}?${query}` : url.pathname
+  } catch {
+    return base
+  }
+}
+
+/* ================= COMPONENT ================= */
+
+export default function HeroSection(props: Props) {
   const [index, setIndex] = useState(0)
 
-  const { ref, src } = useAffiliateContext()
+  const ctx = useAffiliateContext()
+
+  /* 🔥 PRIORITY:
+     1. props (dari server page)
+     2. context (fallback client)
+  */
+  const ref = props.refCode ?? ctx.ref
+  const src = props.src ?? ctx.src ?? "hero"
+
+  /* ================= SLIDER ================= */
 
   useEffect(() => {
     const t = setInterval(() => {
@@ -37,42 +80,39 @@ export default function HeroSection() {
 
   const slide = slides[index]
 
-  /* ================= BUILD URL ================= */
+  /* ================= TRACKED URL ================= */
 
-  function buildUrl(base: string, params: Record<string, string | null>) {
-    const search = new URLSearchParams()
-
-    Object.entries(params).forEach(([key, val]) => {
-        if (val) search.set(key, val)
-    })
-
-    return search.toString() ? `${base}?${search.toString()}` : base
-    }
-
-    const campaignUrl = useMemo(() => {
-        return buildUrl("/campaign/peace-qurban", {
-            ref,
-            src,
-        })
-        }, [ref, src])
+  const campaignUrl = useMemo(() => {
+    return buildAffiliateUrl(
+      "/campaign/peace-qurban",
+      ref,
+      src
+    )
+  }, [ref, src])
 
   const waUrl = useMemo(() => {
-    const phone = "6281322817712" // 🔥 ganti sesuai kebutuhan
+    const phone = "6281322817712"
+
+    const fullUrl =
+      typeof window !== "undefined"
+        ? window.location.origin + campaignUrl
+        : campaignUrl
 
     const message = encodeURIComponent(
-      `Assalamu'alaikum,
+      `Assalamu'alaikum 🙏
 
-Saya tertarik dengan program Peace Qurban 🙏
+Saya tertarik dengan program *Peace Qurban*.
 
-Mohon info lebih lanjut.
+Mohon info lebih lanjut ya.
+
+🔗 ${fullUrl}
 
 Ref: ${ref || "-"}
-Source: ${src || "hero"}
-Link: ${typeof window !== "undefined" ? window.location.origin + campaignUrl : ""}`
+Source: ${src || "hero"}`
     )
 
     return `https://wa.me/${phone}?text=${message}`
-  }, [ref, src, campaignUrl])
+  }, [campaignUrl, ref, src])
 
   /* ================= UI ================= */
 
@@ -188,7 +228,6 @@ Link: ${typeof window !== "undefined" ? window.location.origin + campaignUrl : "
               animate={{ opacity: 1, y: 0 }}
               className="flex flex-col sm:flex-row gap-3 sm:gap-4"
             >
-              {/* 🔥 CAMPAIGN LINK (TRACKED) */}
               <Link
                 href={campaignUrl}
                 className="
@@ -205,10 +244,10 @@ Link: ${typeof window !== "undefined" ? window.location.origin + campaignUrl : "
                 Tunaikan Qurban Sekarang
               </Link>
 
-              {/* 🔥 WA LINK (TRACKED) */}
               <a
                 href={waUrl}
                 target="_blank"
+                rel="noopener noreferrer"
                 className="
                   text-[rgb(var(--color-white))]/80
                   text-[12px]
