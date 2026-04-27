@@ -6,12 +6,40 @@ export const dynamic = "force-dynamic"
 
 const SHEET_ID = process.env.GOOGLE_SHEET_ID as string
 
+/* ======================================================
+   🧠 HELPERS (OUTSIDE LOOP - PERFORMANCE SAFE)
+====================================================== */
+
+function toNumber(val: unknown): number {
+  const n = Number(val)
+  return isNaN(n) ? 0 : n
+}
+
+function parseDate(input: unknown): string {
+  if (!input) return new Date().toISOString().slice(0, 10)
+
+  const d = new Date(String(input))
+
+  if (isNaN(d.getTime())) {
+    console.warn("⚠️ INVALID DATE:", input)
+
+    // 🔥 fallback ke hari ini (biar chart gak hilang)
+    return new Date().toISOString().slice(0, 10)
+  }
+
+  return d.toISOString().slice(0, 10)
+}
+
+/* ======================================================
+   🚀 ROUTE
+====================================================== */
+
 export async function GET() {
   try {
     /* ================= AUTH ================= */
     const user = await getSession()
 
-    if (!user) {
+    if (!user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
@@ -26,11 +54,11 @@ export async function GET() {
       range: "commissions!A:H",
     })
 
-    const rows = res.data.values ?? []
+    const rows: string[][] = res.data.values ?? []
 
     /* ================= INIT ================= */
     let totalAmount = 0
-    let totalEarning = 0 // 🔥 rename dari totalCommission
+    let totalEarning = 0
     let totalConversion = 0
 
     const chartMap: Record<string, number> = {}
@@ -38,28 +66,21 @@ export async function GET() {
     /* ================= LOOP ================= */
     for (let i = 1; i < rows.length; i++) {
       const row = rows[i]
+      if (!row) continue
 
-      const affiliateId = row[2] || ""
-      if (affiliateId !== user.id) continue
+      const affiliateId = row[2]
+      if (!affiliateId || affiliateId !== user.id) continue
 
-      const amount = Number(row[4] || 0)
-      const commission = Number(row[5] || 0)
+      const amount = toNumber(row[4])
+      const commission = toNumber(row[5])
       const createdAt = row[6]
 
       totalAmount += amount
       totalEarning += commission
       totalConversion++
 
-      /* 🔥 SAFE DATE */
-      let date = "unknown"
-
-      try {
-        date = new Date(createdAt)
-          .toISOString()
-          .slice(0, 10)
-      } catch {
-        // ignore invalid date
-      }
+      /* 🔥 PARSE DATE (STRICT) */
+      const date = parseDate(createdAt)
 
       chartMap[date] = (chartMap[date] || 0) + amount
     }
@@ -77,7 +98,7 @@ export async function GET() {
       success: true,
       data: {
         totalAmount,
-        totalEarning, // 🔥 ini yg dipakai frontend
+        totalEarning,
         totalConversion,
         conversionRate:
           totalConversion > 0
@@ -87,7 +108,7 @@ export async function GET() {
       },
     })
   } catch (err) {
-    console.error("SUMMARY ERROR:", err)
+    console.error("🔥 SUMMARY ERROR:", err)
 
     return NextResponse.json(
       { error: "Server error" },

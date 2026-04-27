@@ -1,5 +1,6 @@
 import { google } from "googleapis";
 import { fetchSheet } from "@/lib/google-sheet";
+import { getSheetsClient } from "./google-sheet-client";
 
 /* =========================================================
    CONFIG
@@ -328,6 +329,27 @@ export interface DonationRow {
   src: string;
 }
 
+type DonationRaw = {
+  id: string
+  campaign_id: string
+  organization_id: string
+
+  affiliate_id?: string
+  ref_code?: string
+  ref?: string
+
+  donor_name?: string
+  donor_contact?: string
+
+  amount: number
+  commission_amount?: number
+
+  payment_status: string
+  midtrans_id?: string
+
+  created_at?: string
+  src?: string
+}
 
 export async function getDonationById(
   donationId: string
@@ -469,4 +491,127 @@ export async function getDonationRaw(
   }
 
   return null;
+}
+
+type UpdateAffiliateProfileParams = {
+  name?: string
+  phone?: string
+  bankName?: string
+  bankAccount?: string
+  bankHolder?: string
+}
+
+export async function updateAffiliateProfile(
+  affiliateId: string,
+  data: UpdateAffiliateProfileParams
+) {
+  const sheets = getSheetsClient()
+
+  /* ================= FIND ROW ================= */
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId: SHEET_ID,
+    range: "affiliates!A:A",
+  })
+
+  const rows = res.data.values ?? []
+
+  let rowIndex = -1
+
+  for (let i = 1; i < rows.length; i++) {
+    if (String(rows[i][0]) === String(affiliateId)) {
+      rowIndex = i + 1
+      break
+    }
+  }
+
+  if (rowIndex === -1) {
+    throw new Error("AFFILIATE_NOT_FOUND")
+  }
+
+  /* ================= PREPARE UPDATES ================= */
+
+  const updates: Promise<unknown>[] = []
+
+  // 📌 mapping kolom (sesuai schema kamu)
+  // C = name
+  // E = phone
+  // N = bank_name
+  // O = bank_account_number
+  // P = bank_account_name
+
+  if (data.name !== undefined) {
+    updates.push(
+      sheets.spreadsheets.values.update({
+        spreadsheetId: SHEET_ID,
+        range: `affiliates!C${rowIndex}`,
+        valueInputOption: "USER_ENTERED",
+        requestBody: {
+          values: [[data.name]],
+        },
+      })
+    )
+  }
+
+  if (data.phone !== undefined) {
+    updates.push(
+      sheets.spreadsheets.values.update({
+        spreadsheetId: SHEET_ID,
+        range: `affiliates!E${rowIndex}`,
+        valueInputOption: "USER_ENTERED",
+        requestBody: {
+          values: [[data.phone]],
+        },
+      })
+    )
+  }
+
+  if (data.bankName !== undefined) {
+    updates.push(
+      sheets.spreadsheets.values.update({
+        spreadsheetId: SHEET_ID,
+        range: `affiliates!N${rowIndex}`,
+        valueInputOption: "USER_ENTERED",
+        requestBody: {
+          values: [[data.bankName]],
+        },
+      })
+    )
+  }
+
+  if (data.bankAccount !== undefined) {
+    updates.push(
+      sheets.spreadsheets.values.update({
+        spreadsheetId: SHEET_ID,
+        range: `affiliates!O${rowIndex}`,
+        valueInputOption: "USER_ENTERED",
+        requestBody: {
+          values: [[data.bankAccount]],
+        },
+      })
+    )
+  }
+
+  if (data.bankHolder !== undefined) {
+    updates.push(
+      sheets.spreadsheets.values.update({
+        spreadsheetId: SHEET_ID,
+        range: `affiliates!P${rowIndex}`,
+        valueInputOption: "USER_ENTERED",
+        requestBody: {
+          values: [[data.bankHolder]],
+        },
+      })
+    )
+  }
+
+  if (updates.length === 0) {
+    console.log("⚠️ NO DATA TO UPDATE")
+    return
+  }
+
+  /* ================= EXECUTE ================= */
+
+  await Promise.all(updates)
+
+  console.log("✅ AFFILIATE UPDATED:", affiliateId)
 }
