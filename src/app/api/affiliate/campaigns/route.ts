@@ -91,7 +91,7 @@ export async function GET() {
       }
     }
 
-    console.log("✅ RESULT:", campaigns.length)
+    /*console.log("✅ RESULT:", campaigns.length) */
 
     return NextResponse.json({
       success: true,

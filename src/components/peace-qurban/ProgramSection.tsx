@@ -21,7 +21,7 @@ const programs: ProgramItem[] = [
     subtitle: "Praktis untuk individu & keluarga",
     icon: "🐐",
     image:
-      "https://res.cloudinary.com/de7fqcvpf/image/upload/v1776554573/Jenis-hewan-kurban-domba_lz1cwn.jpg",
+      "https://res.cloudinary.com/de7fqcvpf/image/upload/v1777645026/THUMBNAIL_Domba_p2gmv1.png",
     product: "Qurban Domba",
     highlight: "Paling diminati",
   },
@@ -30,7 +30,7 @@ const programs: ProgramItem[] = [
     subtitle: "Dampak besar untuk banyak penerima",
     icon: "🐄",
     image:
-      "https://res.cloudinary.com/de7fqcvpf/image/upload/v1776554325/Pusat20250511-015908-jual_20sapi2_jva4nr.webp",
+      "https://res.cloudinary.com/de7fqcvpf/image/upload/v1777645156/THUMBNAIL_Sapi_u4qo9o.png",
     product: "Qurban Sapi",
   },
   {
@@ -38,7 +38,7 @@ const programs: ProgramItem[] = [
     subtitle: "Solusi patungan lebih ringan",
     icon: "👥",
     image:
-      "https://res.cloudinary.com/de7fqcvpf/image/upload/v1776554084/img-20250530-174010-68398ba634777c1c1278d9d3_jkunpq.jpg",
+      "https://res.cloudinary.com/de7fqcvpf/image/upload/v1777645023/THUMBNAIL_1per7_ltvogr.png",
     product: "Qurban 1/7 Sapi",
   },
   {
@@ -46,7 +46,7 @@ const programs: ProgramItem[] = [
     subtitle: "Berbagi tanpa harus berqurban penuh",
     icon: "❤️",
     image:
-      "https://res.cloudinary.com/de7fqcvpf/image/upload/v1776553887/Mengutamakan-berqurban-atau-sedekah_bhwqwt.jpg",
+      "https://res.cloudinary.com/de7fqcvpf/image/upload/v1777645161/THUMBNAIL_Sedekah_Qurban_wxhsrz.png",
   },
 ]
 

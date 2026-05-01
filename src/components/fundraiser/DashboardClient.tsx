@@ -9,8 +9,9 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from "recharts"
-import { Copy, Check, LogOut, Wallet } from "lucide-react"
+import { Copy, Check, LogOut, Wallet, Pencil } from "lucide-react"
 import ProfileSection from "@/components/fundraiser/ProfileSection"
+
 /* ================= TYPES ================= */
 
 type Props = {
@@ -21,11 +22,16 @@ type Props = {
   }
 }
 
+type ChartItem = {
+  date: string
+  value: number
+}
+
 type Summary = {
   totalEarning: number
   totalAmount: number
   totalConversion: number
-  chart: { date: string; value: number }[]
+  chart: ChartItem[]
 }
 
 type Campaign = {
@@ -51,39 +57,67 @@ export default function DashboardClient({ session }: Props) {
 
   const [copiedSlug, setCopiedSlug] = useState<string | null>(null)
   const [withdrawAmount, setWithdrawAmount] = useState("")
+  const [editingProfile, setEditingProfile] = useState(false)
 
-  /* ================= FETCH ================= */
+  const [loading, setLoading] = useState(true)
+
+  /* ================= FETCH FUNCTIONS ================= */
+
+  async function loadSummary() {
+    const res = await fetch("/api/affiliate/summary", {
+      credentials: "include",
+    })
+
+    const json = await res.json()
+
+    const d = json.data || {}
+
+    setSummary({
+      totalEarning: Number(d.totalEarning || 0),
+      totalAmount: Number(d.totalAmount || 0),
+      totalConversion: Number(d.totalConversion || 0),
+      chart: Array.isArray(d.chart) ? d.chart : [],
+    })
+  }
+
+  async function loadCampaigns() {
+    const res = await fetch("/api/affiliate/campaigns", {
+      credentials: "include",
+    })
+
+    const json = await res.json()
+
+    setCampaigns(Array.isArray(json.data) ? json.data : [])
+  }
+
+  async function loadProfile() {
+    const res = await fetch("/api/affiliate/profile", {
+      credentials: "include",
+    })
+
+    const json = await res.json()
+
+    setProfile(json.data || null)
+  }
+
+  /* ================= INIT ================= */
 
   useEffect(() => {
-    fetch("/api/affiliate/summary", { credentials: "include" })
-      .then((r) => r.json())
-      .then((res) => {
-        const d = res.data || {}
+    async function init() {
+      try {
+        await Promise.all([
+          loadSummary(),
+          loadCampaigns(),
+          loadProfile(),
+        ])
+      } catch (err) {
+        console.error("INIT ERROR:", err)
+      } finally {
+        setLoading(false)
+      }
+    }
 
-        setSummary({
-          totalEarning: Number(d.totalEarning || 0),
-          totalAmount: Number(d.totalAmount || 0),
-          totalConversion: Number(d.totalConversion || 0),
-          chart: Array.isArray(d.chart) ? d.chart : [],
-        })
-      })
-
-    fetch("/api/affiliate/campaigns", { credentials: "include" })
-      .then((r) => r.json())
-      .then((res) => setCampaigns(res.data || []))
-
-    fetch("/api/affiliate/profile", { credentials: "include" })
-      .then(async (r) => {
-        const text = await r.text()
-
-        try {
-          return JSON.parse(text)
-        } catch {
-          console.error("❌ INVALID JSON:", text)
-          return { data: null }
-        }
-      })
-      .then((res) => setProfile(res.data || null))
+    init()
   }, [])
 
   /* ================= HELPERS ================= */
@@ -94,8 +128,10 @@ export default function DashboardClient({ session }: Props) {
 
   function copyLink(slug: string) {
     const url = `${window.location.origin}/campaign/${slug}?ref=${session.refCode}`
+
     navigator.clipboard.writeText(url)
     setCopiedSlug(slug)
+
     setTimeout(() => setCopiedSlug(null), 1500)
   }
 
@@ -106,7 +142,11 @@ export default function DashboardClient({ session }: Props) {
 
   async function submitWithdraw() {
     const amount = Number(withdrawAmount)
-    if (!amount) return alert("Masukkan nominal")
+
+    if (!amount) {
+      alert("Masukkan nominal")
+      return
+    }
 
     const res = await fetch("/api/affiliate/withdraw", {
       method: "POST",
@@ -115,7 +155,10 @@ export default function DashboardClient({ session }: Props) {
 
     const json = await res.json()
 
-    if (!res.ok) return alert(json.error || "Gagal")
+    if (!res.ok) {
+      alert(json.error || "Gagal")
+      return
+    }
 
     alert("Permintaan withdraw berhasil")
     setWithdrawAmount("")
@@ -123,7 +166,7 @@ export default function DashboardClient({ session }: Props) {
 
   /* ================= DERIVED ================= */
 
-  const chartData = useMemo(() => {
+  const chartData = useMemo<ChartItem[]>(() => {
     return (summary?.chart || []).map((d) => ({
       date: d.date,
       value: Number(d.value || 0),
@@ -132,7 +175,7 @@ export default function DashboardClient({ session }: Props) {
 
   /* ================= LOADING ================= */
 
-  if (!summary) {
+  if (loading || !summary) {
     return (
       <div className="container-main py-10 animate-pulse space-y-4">
         <div className="h-6 w-40 bg-[rgb(var(--color-border))] rounded" />
@@ -144,6 +187,8 @@ export default function DashboardClient({ session }: Props) {
       </div>
     )
   }
+
+  /* ================= UI ================= */
 
   return (
     <div className="container-main py-8 space-y-8">
@@ -173,58 +218,115 @@ export default function DashboardClient({ session }: Props) {
       <div className="card p-6">
         <h3 className="h3 mb-4">Performa Donasi</h3>
 
-        <div className="h-[260px]">
-          <ResponsiveContainer>
-            <LineChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis
-                dataKey="date"
-                tickFormatter={(v) => {
-                  const d = new Date(v)
-                  return isNaN(d.getTime())
-                    ? "-"
-                    : d.toLocaleDateString("id-ID", {
-                        day: "2-digit",
-                        month: "short",
-                      })
-                }}
-              />
-              <Tooltip
-                formatter={(v) =>
-                  `Rp ${formatRp(Number(v || 0))}`
-                }
-              />
-              <Line dataKey="value" strokeWidth={3} dot={false} />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
+        {chartData.length === 0 ? (
+          <p className="text-sm text-muted">Belum ada data</p>
+        ) : (
+          <div className="h-[260px]">
+            <ResponsiveContainer>
+              <LineChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" />
+
+                <XAxis
+                  dataKey="date"
+                  tickFormatter={(v: string) => {
+                    const d = new Date(v)
+                    return isNaN(d.getTime())
+                      ? "-"
+                      : d.toLocaleDateString("id-ID", {
+                          day: "2-digit",
+                          month: "short",
+                        })
+                  }}
+                />
+
+                <Tooltip
+                  formatter={(value) => {
+                    const v = typeof value === "number" ? value : Number(value || 0)
+                    return [`Rp ${formatRp(v)}`, "Donasi"]
+                  }}
+                  labelFormatter={(label) => {
+                    const d = new Date(label)
+                    return isNaN(d.getTime())
+                      ? "-"
+                      : d.toLocaleDateString("id-ID", {
+                          day: "2-digit",
+                          month: "long",
+                          year: "numeric",
+                        })
+                  }}
+                />
+
+                <Line dataKey="value" strokeWidth={3} dot={false} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        )}
       </div>
 
-      {/* CAMPAIGN */}
+      {/* CAMPAIGNS */}
       <div className="card p-6 space-y-3">
         <h3 className="h3">Campaign Kamu</h3>
 
-        {campaigns.map((c) => (
-          <div key={c.id} className="flex justify-between items-center">
-            <div>
-              <p>{c.title}</p>
-              <p className="caption">/campaign/{c.slug}</p>
-            </div>
+        {campaigns.length === 0 ? (
+          <p className="text-sm text-muted">Belum ada campaign</p>
+        ) : (
+          campaigns.map((c) => (
+            <div key={c.id} className="flex justify-between items-center">
+              <div>
+                <p>{c.title}</p>
+                <p className="caption">/campaign/{c.slug}</p>
+              </div>
 
-            <button
-              onClick={() => copyLink(c.slug)}
-              className="btn btn-outline flex gap-2"
-            >
-              {copiedSlug === c.slug ? <Check size={16} /> : <Copy size={16} />}
-              {copiedSlug === c.slug ? "Copied" : "Copy"}
-            </button>
-          </div>
-        ))}
+              <button
+                onClick={() => copyLink(c.slug)}
+                className="btn btn-outline flex gap-2"
+              >
+                {copiedSlug === c.slug ? (
+                  <Check size={16} />
+                ) : (
+                  <Copy size={16} />
+                )}
+                {copiedSlug === c.slug ? "Copied" : "Copy"}
+              </button>
+            </div>
+          ))
+        )}
       </div>
 
       {/* PROFILE */}
-      <ProfileSection initial={profile} />
-      
+      <div className="card p-6 space-y-4">
+        <div className="flex justify-between items-center">
+          <h3 className="h3">Profil</h3>
+
+          {!editingProfile && (
+            <button
+              onClick={() => setEditingProfile(true)}
+              className="btn btn-outline flex gap-2"
+            >
+              <Pencil size={16} /> Edit
+            </button>
+          )}
+        </div>
+
+        {!editingProfile ? (
+          <div className="space-y-2 text-sm">
+            <Info label="Nama" value={profile?.name} />
+            <Info label="No HP" value={profile?.phone} />
+            <Info label="Bank" value={profile?.bankName} />
+            <Info label="No Rekening" value={profile?.bankAccount} />
+            <Info label="Atas Nama" value={profile?.bankHolder} />
+          </div>
+        ) : (
+          <ProfileSection
+            initial={profile}
+            onSaved={() => {
+              setEditingProfile(false)
+              loadProfile()
+            }}
+            onCancel={() => setEditingProfile(false)}
+          />
+        )}
+      </div>
 
       {/* WITHDRAW */}
       <div className="card p-6 space-y-3">
@@ -236,25 +338,33 @@ export default function DashboardClient({ session }: Props) {
           value={withdrawAmount}
           onChange={(e) => setWithdrawAmount(e.target.value)}
           placeholder="Nominal"
-          className="w-full border p-2 rounded"
+          className="w-full border border-[rgb(var(--color-border))] px-3 py-2 rounded-md bg-[rgb(var(--color-surface))]"
         />
 
         <button onClick={submitWithdraw} className="btn btn-primary">
           Ajukan Withdraw
         </button>
       </div>
-
     </div>
   )
 }
 
-/* ================= STAT ================= */
+/* ================= SMALL ================= */
 
 function Stat({ title, value }: { title: string; value: string }) {
   return (
     <div className="card p-5">
       <p className="caption">{title}</p>
       <h2 className="text-xl font-semibold mt-1">{value}</h2>
+    </div>
+  )
+}
+
+function Info({ label, value }: { label: string; value?: string }) {
+  return (
+    <div className="flex justify-between border-b border-[rgb(var(--color-border))] py-2">
+      <span className="text-muted">{label}</span>
+      <span className="font-medium">{value || "-"}</span>
     </div>
   )
 }
