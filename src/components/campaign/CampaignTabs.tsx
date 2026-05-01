@@ -52,12 +52,12 @@ export default function CampaignTabs({
       label: "Donatur",
       href: `/campaign/${slug}/donors`,
     },
-    // future ready
-    // {
-    //   key: "fundraiser",
-    //   label: "Fundraiser",
-    //   href: `/campaign/${slug}/fundraiser`,
-    // },
+    
+    {
+      key: "fundraiser",
+      label: "Fundraiser",
+      href: `/fundraiser/login`,
+    },
   ];
 
   const isActive = (href: string) => {
